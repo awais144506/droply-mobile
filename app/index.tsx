@@ -20,7 +20,6 @@ export default function AuthGate() {
       role?: "OWNER" | "MANAGER" | "RIDER";
     };
 
-    console.log(metadata);
 
     const role = metadata.role;
 

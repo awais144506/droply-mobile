@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Truck, Layers, User } from "lucide-react-native";
+import { Map, History, User } from "lucide-react-native";
 
 export default function RiderLayout() {
   return (
@@ -11,12 +11,12 @@ export default function RiderLayout() {
         tabBarStyle: {
           backgroundColor: "#ffffff",
           borderTopColor: "#e2e8f0",
-          height: 60,
+          height: 75,
           paddingBottom: 8,
           paddingTop: 6,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: "600",
         },
       }}
@@ -24,15 +24,15 @@ export default function RiderLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Trip Desk",
-          tabBarIcon: ({ color, size }) => <Truck size={size} color={color} />,
+          title: "Map",
+          tabBarIcon: ({ color, size }) => <Map size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="ledger"
+        name="history"
         options={{
-          title: "Bottle Ledger",
-          tabBarIcon: ({ color, size }) => <Layers size={size} color={color} />,
+          title: "History",
+          tabBarIcon: ({ color, size }) => <History size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -45,7 +45,7 @@ export default function RiderLayout() {
       <Tabs.Screen
         name="deliver/[stopId]"
         options={{
-          href: null, // Hide dynamic modal from bottom tab bar
+          href: null,
         }}
       />
     </Tabs>
