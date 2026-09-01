@@ -17,7 +17,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Building2,
   ShieldCheck,
   LogOut,
   Lock,
@@ -34,7 +33,6 @@ export default function RiderProfileScreen() {
 
   // Extract Metadata
   const userRole = (user?.publicMetadata?.role as string) || "RIDER";
-  const branchId = (user?.publicMetadata?.branchId as string) || "BR-LAHORE-01";
 
   // Pick & Update Avatar in Clerk
   const handleChangeAvatar = async () => {
@@ -129,8 +127,8 @@ export default function RiderProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text className="text-lg font-bold text-slate-900">
-            {user?.fullName || "Majid Ali"}
+          <Text className="text-lg font-bold text-slate-900 text-center">
+            {user?.fullName || "XYZ"}
           </Text>
 
           <View className="flex-row items-center gap-2 mt-1.5">
@@ -244,16 +242,16 @@ export default function RiderProfileScreen() {
           className="flex-row items-center justify-center gap-2 bg-rose-50 border border-rose-200/80 py-3.5 rounded-2xl active:bg-rose-100 shadow-2xs mb-4"
         >
           <LogOut size={16} color="#e11d48" />
-          <Text className="text-xs font-bold text-rose-600">Sign Out of Device</Text>
+          <Text className="text-xs font-bold text-rose-600">Log Out</Text>
         </TouchableOpacity>
 
         {/* App Footer Info */}
         <View className="items-center">
           <Text className="text-[11px] font-bold text-slate-400">
-            Droply Fleet Engine
+            Droply Rider App
           </Text>
           <Text className="text-[10px] text-slate-400 mt-0.5">
-            Version 1.0.4 • Build 2026.1
+            Version 1.0.0
           </Text>
         </View>
       </ScrollView>

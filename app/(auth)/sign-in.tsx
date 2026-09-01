@@ -7,10 +7,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { useSignIn } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import { Droplets, Mail, KeyRound, ArrowLeft, CheckCircle2 } from "lucide-react-native";
+import { Mail, KeyRound, ArrowLeft, CheckCircle2 } from "lucide-react-native";
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -22,7 +23,6 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 1. Send OTP Code to Email
   const handleSendCode = async () => {
     if (!isLoaded || !email.trim()) return;
     setLoading(true);
@@ -33,7 +33,6 @@ export default function SignInScreen() {
         identifier: email.trim().toLowerCase(),
       });
 
-      // Locate the email_code factor configured in Clerk Dashboard
       const emailCodeFactor: any = supportedFirstFactors?.find(
         (factor: any) => factor.strategy === "email_code"
       );
@@ -56,7 +55,6 @@ export default function SignInScreen() {
     }
   };
 
-  // 2. Verify OTP & Complete Session
   const handleVerifyCode = async () => {
     if (!isLoaded || !code.trim()) return;
     setLoading(true);
@@ -88,20 +86,15 @@ export default function SignInScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-white justify-center px-6"
     >
-      {/* Brand Header */}
       <View className="items-center mb-8">
-        <View className="h-14 w-14 rounded-2xl bg-sky-50 items-center justify-center border border-sky-100 mb-3 shadow-xs">
-          <Droplets size={28} color="#0284c7" />
-        </View>
-        <Text className="text-2xl font-black text-slate-900 tracking-tight">
-          DroplyPK
-        </Text>
-        <Text className="text-xs text-slate-500 mt-1 font-medium">
-          Water Plant Distribution & Field Access
-        </Text>
+   
+          <Image
+            source={require("@/assets/images/logo.png")}
+            className="h-28 w-28"
+            resizeMode="contain"
+          />
       </View>
 
-      {/* Error Alert Box */}
       {Boolean(errorMsg) && (
         <View className="mb-4 p-3 bg-red-50 rounded-xl border border-red-200">
           <Text className="text-xs text-red-600 font-medium text-center">
@@ -111,7 +104,6 @@ export default function SignInScreen() {
       )}
 
       {!pendingVerification ? (
-        /* STEP 1: Enter Email */
         <View className="space-y-3 gap-3">
           <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-3.5 h-12">
             <Mail size={18} color="#64748b" />
@@ -131,21 +123,18 @@ export default function SignInScreen() {
             activeOpacity={0.85}
             onPress={handleSendCode}
             disabled={loading || !email.trim()}
-            className={`h-12 rounded-xl items-center justify-center mt-2 shadow-xs ${
-              loading || !email.trim() ? "bg-sky-400" : "bg-sky-600"
-            }`}
+            className={`h-12 rounded-xl items-center justify-center mt-2 shadow-xs bg-sky-600`}
           >
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
               <Text className="text-white font-bold text-sm">
-                Send Verification Code
+                Login
               </Text>
             )}
           </TouchableOpacity>
         </View>
       ) : (
-        /* STEP 2: Enter 6-Digit OTP */
         <View className="space-y-3 gap-3">
           <View className="p-3 bg-sky-50 rounded-xl border border-sky-100 mb-1">
             <Text className="text-xs text-sky-800 text-center font-medium">
@@ -174,9 +163,7 @@ export default function SignInScreen() {
             activeOpacity={0.85}
             onPress={handleVerifyCode}
             disabled={loading || code.length < 6}
-            className={`h-12 rounded-xl flex-row items-center justify-center mt-2 shadow-xs gap-2 ${
-              loading || code.length < 6 ? "bg-sky-400" : "bg-sky-600"
-            }`}
+            className={`h-12 rounded-xl flex-row items-center justify-center mt-2 shadow-xs gap-2 bg-sky-600`}
           >
             {loading ? (
               <ActivityIndicator color="#ffffff" />
@@ -190,7 +177,6 @@ export default function SignInScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Back / Change Email Trigger */}
           <TouchableOpacity
             onPress={() => {
               setPendingVerification(false);

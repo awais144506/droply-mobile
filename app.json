@@ -29,18 +29,19 @@
       "expo-router",
       [
         "expo-splash-screen",
-        {
+         {
+          "backgroundColor": "#232323",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
           "dark": {
+            "image": "./assets/splash-icon-dark.png",
             "backgroundColor": "#000000"
-          }
+          },
+          "imageWidth": 200
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

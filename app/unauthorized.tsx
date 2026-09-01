@@ -28,7 +28,7 @@ export default function UnauthorizedScreen() {
 
       {/* Heading & Details */}
       <Text className="text-xl font-bold text-slate-900 text-center">
-        Access Pending Approval
+        Access Denied
       </Text>
       <Text className="text-xs text-slate-500 text-center mt-2 px-4 leading-5">
         Your account ({user?.primaryEmailAddress?.emailAddress}) does not have an assigned branch role. Please contact your plant administrator.
