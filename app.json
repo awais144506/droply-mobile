@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.awais144506.Droply"
     },
     "web": {
       "output": "static",
@@ -29,13 +30,9 @@
       "expo-router",
       [
         "expo-splash-screen",
-         {
+        {
           "backgroundColor": "#232323",
           "image": "./assets/images/splash-icon.png",
-          "dark": {
-            "image": "./assets/splash-icon-dark.png",
-            "backgroundColor": "#000000"
-          },
           "imageWidth": 200
         }
       ],
