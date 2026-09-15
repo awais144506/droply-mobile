@@ -5,13 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { tokenCache } from "@/utils/tokenCache";
-import * as SplashScreen from 'expo-splash-screen';
-
-// Set the animation options. This is optional.
-SplashScreen.setOptions({
-  duration: 1000,
-  fade: true,
-});
+import Toast from 'react-native-toast-message';
 
 
 const queryClient = new QueryClient();
@@ -28,6 +22,7 @@ export default function RootLayout() {
           <ClerkLoaded>
             <StatusBar style="dark" />
             <Slot />
+            <Toast />
           </ClerkLoaded>
         </QueryClientProvider>
       </ClerkProvider>

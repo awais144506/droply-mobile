@@ -1,8 +1,71 @@
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 import { Tabs } from "expo-router";
-import { Map, ClipboardList, Wallet, User,BikeIcon } from "lucide-react-native";
+import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
 import { View } from "react-native";
+import { useApiClient } from "@/lib/api-client";
+import Toast from "react-native-toast-message";
 
 export default function RiderLayout() {
+  const api = useApiClient();
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    // 🔥 Added showToast parameter (defaults to false)
+    const updatePresence = async (status: 'ONLINE' | 'OFFLINE', showToast: boolean = false) => {
+      try {
+        console.log(`Attempting to send ${status} to server...`);
+        // Fire-and-forget
+        api.post('/tracking/presence', { status })
+          .then(() => console.log(`SUCCESS: Marked ${status}`))
+          .catch(err => console.log(`FAILED to mark ${status}:`, err.message));
+
+        // 🔥 Only show toast if explicitly requested
+        if (status === 'ONLINE' && showToast) {
+          Toast.show({
+            type: 'success',
+            text1: 'Online Now',
+            text2: 'You are connected to the dispatch system.',
+            position: 'top',
+            visibilityTime: 3000,
+          });
+        }
+      } catch (error) {
+        console.error("Error in updatePresence:", error);
+      }
+    };
+
+    // 1. Initial load (Show Toast)
+    updatePresence('ONLINE', true);
+
+    // 2. App State Changes
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      console.log(`[AppState] Changed from ${appState.current} to ${nextAppState}`);
+
+      if (appState.current === "active" && (nextAppState === "background" || nextAppState === "inactive")) {
+        console.log("🔥 App minimized! Firing OFFLINE request...");
+        updatePresence('OFFLINE', false);
+      } else if ((appState.current === "background" || appState.current === "inactive") && nextAppState === "active") {
+        console.log("🔥 App opened! Firing ONLINE request...");
+        updatePresence('ONLINE', true); // Show Toast when they come back
+      }
+
+      appState.current = nextAppState;
+    });
+    const heartbeatInterval = setInterval(() => {
+      if (appState.current === "active") {
+        console.log("💓 Heartbeat: App is still active, refreshing timestamp...");
+        updatePresence('ONLINE', false);
+      }
+    }, 2 * 60 * 1000);
+
+    // Cleanup
+    return () => {
+      subscription.remove();
+      clearInterval(heartbeatInterval);
+    };
+  }, [api]);
+
   return (
     <Tabs
       screenOptions={{
@@ -60,7 +123,7 @@ export default function RiderLayout() {
           title: "Orders",
           tabBarIcon: ({ color, focused }) => (
             <View className={`items-center justify-center h-8 w-14 rounded-full ${focused ? "bg-sky-200" : ""}`}>
-              <BikeIcon size={20} color={color} />
+              <Bike size={20} color={color} />
             </View>
           ),
         }}

@@ -12,7 +12,6 @@ export const tokenCache = {
     try {
       await SecureStore.setItemAsync(key, value);
     } catch {
-      // Ignore storage write failure
     }
   },
 };

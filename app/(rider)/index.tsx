@@ -5,10 +5,11 @@ import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import * as Location from "expo-location";
 import { MapPin, LocateFixed, Bike } from "lucide-react-native";
-
 import { LatLng, DeliveryStop, getDistanceInMeters, formatDistance } from "@/utils/locationUtils";
 import HeaderMetrics from "@/components/delivery/HeaderMetrics";
 import StopDrawer from "@/components/delivery/StopDrawer";
+import { useStartShift } from "@/features/tracking/api/use-tracking";
+import { useUser } from "@clerk/clerk-expo";
 
 const SAHIWAL_INITIAL_REGION = {
   latitude: 30.6682,
@@ -19,12 +20,14 @@ const SAHIWAL_INITIAL_REGION = {
 
 const MOCK_SAHIWAL_STOPS: DeliveryStop[] = [
   { id: "stop-1", orderNumber: "ORD-101", customerName: "Tariq Mahmood", phone: "+923214455667", address: "House 14, Block Y, Farid Town, Sahiwal", bottlesToDeliver: 4, expectedEmpty: 4, cashToCollect: 800, latitude: 30.675, longitude: 73.118, status: "PENDING", category: "RECOVERY" },
-  { id: "stop-2", orderNumber: "ORD-102", customerName: "Al-Madina Sweets", phone: "+923007788990", address: "Main Bazar, Tariq Bin Ziad Colony, Sahiwal", bottlesToDeliver: 10, expectedEmpty: 10, cashToCollect: 2000, latitude: 30.662, longitude: 73.102, status: "PENDING",category: "DELIVERY" },
+  { id: "stop-2", orderNumber: "ORD-102", customerName: "Al-Madina Sweets", phone: "+923007788990", address: "Main Bazar, Tariq Bin Ziad Colony, Sahiwal", bottlesToDeliver: 10, expectedEmpty: 10, cashToCollect: 2000, latitude: 30.662, longitude: 73.102, status: "PENDING", category: "DELIVERY" },
 ];
 
 export default function RiderMapScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
+  const { user } = useUser();
+  const { mutateAsync: startShift, isPending: isStartingShift } = useStartShift();
 
   const [riderLocation, setRiderLocation] = useState<LatLng>({ latitude: 30.666, longitude: 73.109 });
   const [stops] = useState<DeliveryStop[]>(MOCK_SAHIWAL_STOPS);
@@ -102,13 +105,40 @@ export default function RiderMapScreen() {
   };
 
   const handleStartRide = async () => {
-    setIsRiding(true);
-    setIsDrawerExpanded(false);
-    const destination = { latitude: selectedStop.latitude, longitude: selectedStop.longitude };
-    const coords = await fetchRoadRoute(riderLocation, destination);
+    // 1. Basic validation
+    const branchId = user?.publicMetadata?.branchId as string;
+    const riderId = user?.id;
 
-    if (coords && coords.length > 0) {
-      mapRef.current?.fitToCoordinates(coords, { edgePadding: { top: 90, right: 60, bottom: 230, left: 60 }, animated: true });
+    if (!branchId || !riderId) {
+      Alert.alert("Error", "Missing rider or branch information.");
+      return;
+    }
+
+    try {
+      // 2. Fire the TanStack Mutation via Axios
+      await startShift({
+        branchId,
+        riderId,
+        lat: riderLocation.latitude,
+        lng: riderLocation.longitude,
+      });
+
+      // 3. Update local UI state only AFTER successful backend creation
+      setIsRiding(true);
+      setIsDrawerExpanded(false);
+
+      // 4. Calculate visual route map
+      const destination = { latitude: selectedStop.latitude, longitude: selectedStop.longitude };
+      const coords = await fetchRoadRoute(riderLocation, destination);
+
+      if (coords && coords.length > 0) {
+        mapRef.current?.fitToCoordinates(coords, { edgePadding: { top: 90, right: 60, bottom: 230, left: 60 }, animated: true });
+      }
+    } catch (error: any) {
+      Alert.alert(
+        "Failed to start route",
+        error?.message || "Could not connect to the server."
+      );
     }
   };
 
@@ -136,7 +166,7 @@ export default function RiderMapScreen() {
       <HeaderMetrics />
 
       <View className="flex-1 relative z-0">
-        <MapView ref={mapRef} provider={PROVIDER_DEFAULT} initialRegion={SAHIWAL_INITIAL_REGION} style={StyleSheet.absoluteFillObject} showsCompass={false}>
+        <MapView ref={mapRef} provider={PROVIDER_DEFAULT} initialRegion={SAHIWAL_INITIAL_REGION} style={StyleSheet.absoluteFill} showsCompass={false}>
           <Marker coordinate={riderLocation} anchor={{ x: 0.5, y: 0.5 }}>
             <View className="items-center">
               <View className="h-8 w-8 rounded-full bg-slate-900 border-2 border-white items-center justify-center shadow-lg">
