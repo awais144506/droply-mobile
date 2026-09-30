@@ -7,7 +7,6 @@ import {
   CheckCheck,
   User
 } from "lucide-react-native";
-// eslint-disable-next-line import/no-unresolved
 import { Task } from "@/features/tasks/types/task";
 
 interface TaskCardProps {
@@ -15,7 +14,7 @@ interface TaskCardProps {
   onToggle: (id: string) => void;
 }
 
-export default function TaskCard({ task, onToggle }: TaskCardProps) {
+export const TaskCard = ({ task, onToggle }: TaskCardProps) => {
   const isCompleted = task.status === "COMPLETED";
 
   const formatTime = (dateString: string | null) => {
@@ -29,8 +28,8 @@ export default function TaskCard({ task, onToggle }: TaskCardProps) {
       activeOpacity={0.7}
       onPress={() => onToggle(task.id)}
       className={`p-4 rounded-2xl border mb-3 flex-row items-start gap-3 shadow-sm ${isCompleted
-          ? "bg-slate-50 border-slate-200 opacity-70"
-          : "bg-white border-slate-200"
+        ? "bg-slate-50 border-slate-200 opacity-70"
+        : "bg-white border-slate-200"
         }`}
     >
       <View className="pt-0.5">
@@ -70,18 +69,18 @@ export default function TaskCard({ task, onToggle }: TaskCardProps) {
               {/* Extracted the role into a proper visual badge */}
               <View
                 className={`self-start px-1.5 py-0.5 rounded-md mt-0.5 ${isCompleted
-                    ? "bg-slate-200"
-                    : task.assignedByRole === "OWNER"
-                      ? "bg-amber-100"
-                      : "bg-indigo-100"
+                  ? "bg-slate-200"
+                  : task.assignedByRole === "OWNER"
+                    ? "bg-amber-100"
+                    : "bg-indigo-100"
                   }`}
               >
                 <Text
                   className={`text-[9px] font-black uppercase tracking-wider ${isCompleted
-                      ? "text-slate-400"
-                      : task.assignedByRole === "OWNER"
-                        ? "text-amber-700"
-                        : "text-indigo-700"
+                    ? "text-slate-400"
+                    : task.assignedByRole === "OWNER"
+                      ? "text-amber-700"
+                      : "text-indigo-700"
                     }`}
                 >
                   {task.assignedByRole}

@@ -222,7 +222,7 @@ export default function RiderMapScreen() {
       <View className="flex-1 relative z-0">
         <Map
           style={StyleSheet.absoluteFill}
-          mapStyle="https://tiles.openfreemap.org/styles/tiles"
+          mapStyle="https://tiles.openfreemap.org/styles/liberty"
         >
           <Camera
             ref={cameraRef}

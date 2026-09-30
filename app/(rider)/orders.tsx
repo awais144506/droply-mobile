@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -12,11 +13,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { ArrowLeft, Minus, Plus, CheckCircle2, UserPlus, CalendarDays, PackageSearch, PlusCircle, Trash2 } from "lucide-react-native";
+import { ShoppingCart, Minus, Plus, CheckCircle2, UserPlus, CalendarDays, PackageSearch, PlusCircle, Trash2 } from "lucide-react-native";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import { useUser } from "@clerk/clerk-expo";
-// 🔥 Import the new hook
 import { useRiderOrderData } from "@/features/orders/api/use-order";
 
 type ScheduleMode = "TODAY" | "TOMORROW" | "LATER";
@@ -31,27 +31,21 @@ export default function NewOrderScreen() {
   const router = useRouter();
   const { user } = useUser();
   const branchId = user?.publicMetadata?.branchId as string | undefined;
-
-  // 🔥 Fetch live zones, customers, and branch products
   const { data, isLoading, refetch, isRefetching } = useRiderOrderData(branchId);
 
   const zoneOptions = data?.zoneOptions || [];
   const allCustomers = data?.customerOptions || [];
   const productOptions = data?.productOptions || [];
 
-  // Customer State
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
-  // Cart & Product State
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [quantityRequested, setQuantityRequested] = useState(1);
 
-  // Scheduling State
   const [schedule, setSchedule] = useState<ScheduleMode>("TODAY");
 
-  // Custom Alert State
   const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
     visible: false,
     title: "",
@@ -90,7 +84,7 @@ export default function NewOrderScreen() {
     }
   };
 
-  // 🔥 Handle adding items to the multi-item cart
+
   const handleAddToCart = () => {
     if (!selectedProductId) return;
 
@@ -135,7 +129,7 @@ export default function NewOrderScreen() {
 
     const customerName = allCustomers.find(c => c.id === selectedCustomerId)?.label;
 
-    let scheduleText = schedule;
+    let scheduleText = String(schedule);
     if (schedule === "LATER") {
       scheduleText = customDate.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' });
     }
@@ -160,12 +154,13 @@ export default function NewOrderScreen() {
     <SafeAreaView className="flex-1 bg-slate-50">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
 
-        <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
-          <TouchableOpacity onPress={() => router.back()} className="h-9 w-9 bg-slate-100 rounded-xl items-center justify-center">
-            <ArrowLeft size={18} color="#334155" />
-          </TouchableOpacity>
-          <Text className="text-sm font-bold text-slate-900">Generate Order</Text>
-          <View className="w-9" />
+        <View className="px-4 py-3 bg-white border-b border-slate-200">
+          <View className="flex-row items-center gap-2">
+            <View className="h-9 w-9 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+              <ShoppingCart size={25} color="#0284c7" />
+            </View>
+            <Text className="text-lg font-bold text-slate-900">Create Order</Text>
+          </View>
         </View>
 
         <ScrollView

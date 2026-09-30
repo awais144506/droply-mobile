@@ -1,20 +1,20 @@
-import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ClipboardList } from "lucide-react-native";
-import TaskCard from "@/components/tasks/TaskCard";
+import { TaskCard } from "@/features/tasks/components/TaskCard";
 import { useRole } from "@/lib/use-role";
 import { useTasks, useUpdateTask } from "@/features/tasks/api/use-tasks";
+import { Loading } from "../loading";
+import { Error } from "../error";
 
 export default function TasksScreen() {
   const { branchId } = useRole();
-
-  // 1. Fetch data from React Query
   const { data: tasks = [], isLoading, isError, refetch, isRefetching } = useTasks(branchId);
   const { mutate: updateTask, isPending: isUpdating } = useUpdateTask();
   const pendingTasks = tasks.filter((t) => t.status === "INCOMPLETE");
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
 
-  // 4. Handle Toggle via API Mutation
+
   const handleToggleTask = (taskId: string) => {
     if (isUpdating) return;
     const task = tasks.find((t) => t.id === taskId);
@@ -23,25 +23,8 @@ export default function TasksScreen() {
     updateTask({ id: taskId, payload: { status: newStatus } });
   };
 
-  // Loading State
-  if (isLoading && !isRefetching) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#0284c7" />
-        <Text className="mt-4 text-slate-500 font-medium">Loading tasks...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  // Error State
-  if (isError) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center px-4">
-        <Text className="text-rose-500 font-bold text-lg mb-2">Connection Error</Text>
-        <Text className="text-slate-500 text-center mb-4">Could not load tasks. Please check your internet connection.</Text>
-      </SafeAreaView>
-    );
-  }
+  if (isLoading && !isRefetching) return <Loading text="Tasks" />
+  if (isError) return <Error text="tasks" />
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>

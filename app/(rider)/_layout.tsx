@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef } from "react";
 import { AppState, View } from "react-native";
 import { Tabs } from "expo-router";
@@ -59,7 +60,7 @@ export default function RiderLayout() {
       subscription.remove();
       clearInterval(heartbeatInterval);
     };
-  }, [api]);
+  }, []);
 
   return (
     <Tabs
@@ -71,7 +72,7 @@ export default function RiderLayout() {
           backgroundColor: "#ffffff",
           borderTopWidth: 1,
           borderTopColor: "#f1f5f9",
-          height: 80,
+          height: 90,
           paddingBottom: 8,
           paddingTop: 8,
           elevation: 8,
@@ -95,7 +96,7 @@ export default function RiderLayout() {
         options={{
           title: "Route",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-full ${focused ? "bg-sky-200" : ""}`}>
+            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
               <Map size={20} color={color} />
             </View>
           ),
@@ -106,7 +107,7 @@ export default function RiderLayout() {
         options={{
           title: "Wallet",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-full ${focused ? "bg-sky-200" : ""}`}>
+            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
               <Wallet size={20} color={color} />
             </View>
           ),
@@ -117,7 +118,7 @@ export default function RiderLayout() {
         options={{
           title: "Orders",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-full ${focused ? "bg-sky-200" : ""}`}>
+            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
               <Bike size={20} color={color} />
             </View>
           ),
@@ -128,7 +129,7 @@ export default function RiderLayout() {
         options={{
           title: "Tasks",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-full ${focused ? "bg-sky-200" : ""}`}>
+            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
               <ClipboardList size={20} color={color} />
             </View>
           ),
@@ -139,7 +140,7 @@ export default function RiderLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-full ${focused ? "bg-sky-200" : ""}`}>
+            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
               <User size={20} color={color} />
             </View>
           ),
