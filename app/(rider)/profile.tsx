@@ -6,7 +6,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  Alert,
+  RefreshControl
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useClerk, useUser } from "@clerk/clerk-expo";
@@ -23,16 +23,37 @@ import {
   User,
   CheckCircle2,
 } from "lucide-react-native";
+import { useRole } from "@/lib/use-role";
+import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
+import { useRiderOrderData } from "@/features/orders/api/use-order";
 
 export default function RiderProfileScreen() {
+  const { userName, userEmail, phone, role, branchId } = useRole();
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
 
+  // 🔥 Fetching the flattened zone data
+  const { data: orderData, isLoading: isZonesLoading, refetch, isRefetching } = useRiderOrderData(branchId);
+  const assignedZones = orderData?.assignedZones || [];
+
   const [isUploading, setIsUploading] = useState(false);
 
-  // Extract Metadata
-  const userRole = (user?.publicMetadata?.role as string) || "RIDER";
+  // State to manage our custom alert
+  const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
+    visible: false,
+    title: "",
+    message: "",
+    onConfirm: () => { },
+  });
+
+  const showAlert = (config: Omit<CustomAlertProps, "visible">) => {
+    setAlertConfig({ ...config, visible: true });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   // Pick & Update Avatar in Clerk
   const handleChangeAvatar = async () => {
@@ -41,10 +62,11 @@ export default function RiderProfileScreen() {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission Required",
-          "Camera roll access is needed to upload a profile photo."
-        );
+        showAlert({
+          title: "Permission Required",
+          message: "Camera roll access is needed to upload a profile photo.",
+          onConfirm: closeAlert,
+        });
         return;
       }
 
@@ -65,37 +87,52 @@ export default function RiderProfileScreen() {
         file: base64Image,
       });
 
-      Alert.alert("Success", "Profile photo updated successfully!");
+      showAlert({
+        title: "Success",
+        message: "Profile photo updated successfully!",
+        onConfirm: closeAlert,
+      });
     } catch (err: any) {
-      Alert.alert(
-        "Upload Failed",
-        err?.message || "Could not update profile photo. Please try again."
-      );
+      showAlert({
+        title: "Upload Failed",
+        message: err?.message || "Could not update profile photo. Please try again.",
+        onConfirm: closeAlert,
+        isDestructive: true,
+      });
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to log out of your session?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-          router.replace("/(auth)/sign-in");
-        },
+    showAlert({
+      title: "Sign Out",
+      message: "Are you sure you want to log out of your session?",
+      confirmText: "Log Out",
+      cancelText: "Cancel",
+      isDestructive: true,
+      onCancel: closeAlert,
+      onConfirm: async () => {
+        closeAlert();
+        await signOut();
+        router.replace("/(auth)/sign-in");
       },
-    ]);
+    });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <ScrollView
-        className="flex-1 px-4 pt-2"
+        className="flex-1 px-4 pt-4"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={["#0284c7"]}
+            tintColor="#0284c7"
+          />
+        }
       >
         {/* Hero Card / Avatar Section */}
         <View className="bg-white p-6 rounded-3xl border border-slate-200/90 items-center shadow-xs mb-4">
@@ -128,14 +165,14 @@ export default function RiderProfileScreen() {
           </View>
 
           <Text className="text-lg font-bold text-slate-900 text-center">
-            {user?.fullName || "XYZ"}
+            {userName || "XYZ"}
           </Text>
 
           <View className="flex-row items-center gap-2 mt-1.5">
             <View className="flex-row items-center gap-1 bg-sky-50 border border-sky-200/60 px-2.5 py-0.5 rounded-full">
               <ShieldCheck size={11} color="#0284c7" />
               <Text className="text-[11px] font-bold text-sky-700 uppercase tracking-wide">
-                {userRole}
+                {role}
               </Text>
             </View>
 
@@ -147,6 +184,15 @@ export default function RiderProfileScreen() {
             </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          onPress={handleSignOut}
+          activeOpacity={0.7}
+          className="flex-row items-center justify-center gap-2 bg-rose-50 border border-rose-200/80 py-3.5 rounded-2xl active:bg-rose-100 shadow-2xs mb-4"
+        >
+          <LogOut size={16} color="#e11d48" />
+          <Text className="text-xs font-bold text-rose-600">Log Out</Text>
+        </TouchableOpacity>
 
         {/* Read-Only: Identity & Contact Card */}
         <View className="bg-white rounded-2xl border border-slate-200/90 p-4 mb-4 shadow-2xs">
@@ -169,7 +215,7 @@ export default function RiderProfileScreen() {
                 <View>
                   <Text className="text-[10px] text-slate-400 font-medium">Full Name</Text>
                   <Text className="text-xs font-semibold text-slate-800 mt-0.5">
-                    {user?.fullName || "Majid Ali"}
+                    {userName || "Muhammad Awais"}
                   </Text>
                 </View>
               </View>
@@ -183,7 +229,7 @@ export default function RiderProfileScreen() {
                 <View>
                   <Text className="text-[10px] text-slate-400 font-medium">Email Address</Text>
                   <Text className="text-xs font-semibold text-slate-800 mt-0.5">
-                    {user?.primaryEmailAddress?.emailAddress || "majid.rider@droply.pk"}
+                    {userEmail || "awais.rider@droply.pk"}
                   </Text>
                 </View>
               </View>
@@ -197,7 +243,7 @@ export default function RiderProfileScreen() {
                 <View>
                   <Text className="text-[10px] text-slate-400 font-medium">Phone Number</Text>
                   <Text className="text-xs font-semibold text-slate-800 mt-0.5">
-                    {user?.primaryPhoneNumber?.phoneNumber || "+92 321 4455667"}
+                    {phone || "+923214455667"}
                   </Text>
                 </View>
               </View>
@@ -209,7 +255,7 @@ export default function RiderProfileScreen() {
         <View className="bg-white rounded-2xl border border-slate-200/90 p-4 mb-5 shadow-2xs">
           <View className="flex-row items-center justify-between pb-3 border-b border-slate-100 mb-3">
             <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Operational Assignment
+              Assigned Zones
             </Text>
             <View className="flex-row items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md">
               <Lock size={10} color="#64748b" />
@@ -217,36 +263,40 @@ export default function RiderProfileScreen() {
             </View>
           </View>
 
-          <View className="space-y-3">
-            <View className="flex-row items-center justify-between py-1.5">
-              <View className="flex-row items-center gap-2.5">
-                <View className="h-8 w-8 rounded-lg bg-indigo-50 items-center justify-center">
-                  <MapPin size={15} color="#4f46e5" />
+          <View className="space-y-4">
+            {isZonesLoading ? (
+              <ActivityIndicator size="small" color="#4f46e5" className="py-4" />
+            ) : assignedZones.length > 0 ? (
+              assignedZones.map((zone, index) => (
+                <View
+                  key={zone.id}
+                  className={index > 0 ? "pt-4 border-t border-slate-100" : ""}
+                >
+                  <View className="flex-row items-center justify-between py-1.5">
+                    <View className="flex-row items-center gap-2.5">
+                      <View className="h-8 w-8 rounded-lg bg-indigo-50 items-center justify-center">
+                        <MapPin size={15} color="#4f46e5" />
+                      </View>
+                      <Text className="text-xs font-semibold text-slate-800 mt-0.5">
+                        {zone.name}
+                      </Text>
+                    </View>
+                    <Text className="text-xs font-semibold text-slate-800 mt-0.5">
+                      Total Customers: <Text className="text-amber-600 text-sm">{zone.totalCustomers}</Text>
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text className="text-[10px] text-slate-400 font-medium">Primary Route Sector</Text>
-                  <Text className="text-xs font-semibold text-slate-800 mt-0.5">
-                    Airline Housing Society (Sec A-E)
-                  </Text>
-                </View>
-              </View>
-            </View>
-
+              ))
+            ) : (
+              <Text className="text-sm text-slate-500 text-center py-4 font-medium">
+                No route sectors currently assigned.
+              </Text>
+            )}
           </View>
         </View>
 
-        {/* Sign Out Action */}
-        <TouchableOpacity
-          onPress={handleSignOut}
-          activeOpacity={0.7}
-          className="flex-row items-center justify-center gap-2 bg-rose-50 border border-rose-200/80 py-3.5 rounded-2xl active:bg-rose-100 shadow-2xs mb-4"
-        >
-          <LogOut size={16} color="#e11d48" />
-          <Text className="text-xs font-bold text-rose-600">Log Out</Text>
-        </TouchableOpacity>
-
         {/* App Footer Info */}
-        <View className="items-center">
+        <View className="items-center mb-6">
           <Text className="text-[11px] font-bold text-slate-400">
             Droply Rider App
           </Text>
@@ -255,6 +305,10 @@ export default function RiderProfileScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Render the Custom Alert outside the ScrollView */}
+      <CustomAlert {...alertConfig} />
+
     </SafeAreaView>
   );
 }

@@ -1,62 +1,81 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
-import { useAlertStore } from "@/store/useAlertStore";
-import { AlertCircle } from "lucide-react-native";
+import { 
+  Modal, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  TouchableWithoutFeedback 
+} from "react-native";
 
-export default function CustomAlert() {
-  const { visible, title, message, buttons, hideAlert } = useAlertStore();
+export interface CustomAlertProps {
+  visible: boolean;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: () => void;
+  onCancel?: () => void;
+  isDestructive?: boolean; // Turns the confirm button red for Sign Out / Delete actions
+}
 
+export function CustomAlert({
+  visible,
+  title,
+  message,
+  confirmText = "OK",
+  cancelText,
+  onConfirm,
+  onCancel,
+  isDestructive = false,
+}: CustomAlertProps) {
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade">
-      <View className="flex-1 items-center justify-center bg-slate-900/50 px-6">
-        <View className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-xl border border-slate-100">
-          
-          {/* Icon Header */}
-          <View className="h-12 w-12 rounded-2xl bg-sky-50 border border-sky-100 items-center justify-center mb-4">
-            <AlertCircle size={24} color="#0284c7" />
-          </View>
+    <Modal visible={visible} transparent animationType="fade">
+      <TouchableWithoutFeedback onPress={onCancel}>
+        <View className="flex-1 bg-slate-900/40 justify-center items-center px-6">
+          <TouchableWithoutFeedback>
+            <View className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-xl">
+              
+              <Text className="text-lg font-bold text-slate-900 text-center mb-2">
+                {title}
+              </Text>
+              
+              <Text className="text-sm font-medium text-slate-500 text-center mb-6 leading-relaxed">
+                {message}
+              </Text>
 
-          {/* Title & Message */}
-          <Text className="text-base font-bold text-slate-900 mb-1">{title}</Text>
-          <Text className="text-xs text-slate-500 leading-relaxed mb-6">{message}</Text>
+              <View className="flex-row gap-3">
+                {/* Render Cancel button only if onCancel is provided */}
+                {onCancel && (
+                  <TouchableOpacity
+                    onPress={onCancel}
+                    activeOpacity={0.7}
+                    className="flex-1 py-3.5 rounded-xl bg-slate-100 items-center justify-center border border-slate-200"
+                  >
+                    <Text className="text-sm font-bold text-slate-600">
+                      {cancelText || "Cancel"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-          {/* Buttons Layout */}
-          <View className="flex-row gap-3">
-            {buttons.map((btn, index) => {
-              const isCancel = btn.style === "cancel";
-              const isDestructive = btn.style === "destructive";
-
-              return (
                 <TouchableOpacity
-                  key={index}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    hideAlert();
-                    btn.onPress?.();
-                  }}
-                  className={`flex-1 h-11 rounded-xl items-center justify-center border ${
-                    isCancel
-                      ? "bg-white border-slate-200"
-                      : isDestructive
-                      ? "bg-rose-600 border-rose-600"
-                      : "bg-sky-600 border-sky-600"
+                  onPress={onConfirm}
+                  activeOpacity={0.7}
+                  className={`flex-1 py-3.5 rounded-xl items-center justify-center shadow-sm ${
+                    isDestructive ? "bg-rose-600" : "bg-sky-600"
                   }`}
                 >
-                  <Text
-                    className={`text-xs font-bold ${
-                      isCancel ? "text-slate-700" : "text-white"
-                    }`}
-                  >
-                    {btn.text}
+                  <Text className="text-sm font-bold text-white">
+                    {confirmText}
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
+              </View>
+
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

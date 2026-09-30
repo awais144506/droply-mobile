@@ -1,16 +1,14 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { 
-  Wrench, 
-  PackagePlus, 
-  Banknote, 
-  ClipboardList, 
-  CheckCircle2, 
+import {
+  CheckCircle2,
   Circle,
   Clock,
-  CheckCheck
+  CheckCheck,
+  User
 } from "lucide-react-native";
-import { Task } from "@/types/tasks";
+// eslint-disable-next-line import/no-unresolved
+import { Task } from "@/features/tasks/types/task";
 
 interface TaskCardProps {
   task: Task;
@@ -20,30 +18,20 @@ interface TaskCardProps {
 export default function TaskCard({ task, onToggle }: TaskCardProps) {
   const isCompleted = task.status === "COMPLETED";
 
-  const getCategoryConfig = () => {
-    switch (task.category) {
-      case "MAINTENANCE":
-        return { Icon: Wrench, bg: "bg-amber-100", color: "#d97706" };
-      case "SUPPLY":
-        return { Icon: PackagePlus, bg: "bg-sky-100", color: "#0284c7" };
-      case "FINANCE":
-        return { Icon: Banknote, bg: "bg-emerald-100", color: "#16a34a" };
-      default:
-        return { Icon: ClipboardList, bg: "bg-slate-100", color: "#475569" };
-    }
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   };
-
-  const { Icon, bg, color } = getCategoryConfig();
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() => onToggle(task.id)}
-      className={`p-3.5 rounded-2xl border mb-3 flex-row items-start gap-3 ${
-        isCompleted
-          ? "bg-slate-50 border-slate-200 opacity-80"
-          : "bg-white border-slate-200 shadow-xs"
-      }`}
+      className={`p-4 rounded-2xl border mb-3 flex-row items-start gap-3 shadow-sm ${isCompleted
+          ? "bg-slate-50 border-slate-200 opacity-70"
+          : "bg-white border-slate-200"
+        }`}
     >
       <View className="pt-0.5">
         {isCompleted ? (
@@ -54,58 +42,68 @@ export default function TaskCard({ task, onToggle }: TaskCardProps) {
       </View>
 
       <View className="flex-1">
-        <View className="flex-row items-start justify-between">
-          <Text
-            className={`text-sm font-bold flex-1 pr-2 ${
-              isCompleted ? "text-slate-400 line-through" : "text-slate-900"
-            }`}
-          >
-            {task.title}
-          </Text>
-          {task.priority === "HIGH" && !isCompleted && (
-            <View className="bg-rose-100 px-2 py-0.5 rounded-md">
-              <Text className="text-[9px] font-bold text-rose-700">URGENT</Text>
-            </View>
-          )}
-        </View>
-
+        {/* 🔥 Removed the generic title so the actual description is the focal point */}
         <Text
-          className={`text-xs mt-1 leading-relaxed ${
-            isCompleted ? "text-slate-400" : "text-slate-500"
-          }`}
+          className={`text-base font-bold leading-snug ${isCompleted ? "text-slate-400 line-through" : "text-slate-800"
+            }`}
         >
           {task.description}
         </Text>
 
         {/* Footer Meta & Timestamps */}
-        <View className="mt-3 pt-2.5 border-t border-slate-100 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-1.5">
-            <View className={`p-1 rounded-md ${isCompleted ? "bg-slate-200" : bg}`}>
-              <Icon size={12} color={isCompleted ? "#94a3b8" : color} />
+        <View className="mt-3 pt-3 border-t border-slate-100 flex-row items-center justify-between">
+
+          {/* 🔥 Restructured Assigner block for better visibility */}
+          <View className="flex-row items-center gap-2">
+            <View className={`p-1.5 rounded-lg ${isCompleted ? "bg-slate-200" : "bg-sky-50"}`}>
+              <User size={14} color={isCompleted ? "#94a3b8" : "#0284c7"} />
             </View>
-            <Text
-              className={`text-[10px] font-semibold tracking-wide uppercase ${
-                isCompleted ? "text-slate-400" : "text-slate-500"
-              }`}
-            >
-              {task.category}
-            </Text>
+            <View>
+              <Text
+                className={`text-xs font-bold ${isCompleted ? "text-slate-400" : "text-slate-700"
+                  }`}
+                numberOfLines={1}
+              >
+                {task.assignedByName}
+              </Text>
+
+              {/* Extracted the role into a proper visual badge */}
+              <View
+                className={`self-start px-1.5 py-0.5 rounded-md mt-0.5 ${isCompleted
+                    ? "bg-slate-200"
+                    : task.assignedByRole === "OWNER"
+                      ? "bg-amber-100"
+                      : "bg-indigo-100"
+                  }`}
+              >
+                <Text
+                  className={`text-[9px] font-black uppercase tracking-wider ${isCompleted
+                      ? "text-slate-400"
+                      : task.assignedByRole === "OWNER"
+                        ? "text-amber-700"
+                        : "text-indigo-700"
+                    }`}
+                >
+                  {task.assignedByRole}
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* Timestamp Tracker */}
           <View className="flex-row items-center gap-1">
             {isCompleted && task.completedAt ? (
               <>
-                <CheckCheck size={12} color="#10b981" />
-                <Text className="text-[10px] font-medium text-emerald-600">
-                  Done {task.completedAt}
+                <CheckCheck size={14} color="#10b981" />
+                <Text className="text-[10px] font-bold text-emerald-600">
+                  Done {formatTime(task.completedAt)}
                 </Text>
               </>
             ) : (
               <>
-                <Clock size={12} color="#94a3b8" />
-                <Text className="text-[10px] font-medium text-slate-400">
-                  Assigned {task.assignedAt}
+                <Clock size={14} color="#94a3b8" />
+                <Text className="text-[10px] font-bold text-slate-400">
+                  {formatTime(task.createdAt)}
                 </Text>
               </>
             )}

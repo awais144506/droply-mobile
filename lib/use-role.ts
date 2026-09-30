@@ -11,6 +11,7 @@ export function useRole() {
   const tierCycle = (user?.publicMetadata.cycle as string) || "TRIAL";
   const userStatus = (user?.publicMetadata.status as string) || "SUSPENDED";
   const renewDate = user?.publicMetadata.renewDate;
+  const phone = user?.publicMetadata.phone;
   const userName = String(user?.fullName) || "XYZ";
   const userEmail = String(user?.emailAddresses);
   const userProfilePicture = user?.imageUrl;
@@ -27,6 +28,7 @@ export function useRole() {
     userEmail,
     userProfilePicture,
     userId,
+    phone,
     isOwner: role === "OWNER",
     isManager: role === "MANAGER",
     isLoading: !isLoaded,

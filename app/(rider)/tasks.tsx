@@ -1,80 +1,73 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ClipboardList } from "lucide-react-native";
-import { Task } from "@/types/tasks";
 import TaskCard from "@/components/tasks/TaskCard";
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: "t1",
-    title: "Change Bike Engine Oil",
-    description: "Mileage hit 2000km. Stop by Honda center on High Street to get 10w-40 oil changed.",
-    priority: "HIGH",
-    status: "PENDING",
-    category: "MAINTENANCE",
-    assignedAt: "Today, 08:30 AM",
-  },
-  {
-    id: "t2",
-    title: "Pick up new filter caps",
-    description: "Purchase 500 new blue bottle caps from the wholesale market.",
-    priority: "NORMAL",
-    status: "PENDING",
-    category: "SUPPLY",
-    assignedAt: "Today, 09:15 AM",
-  },
-  {
-    id: "t3",
-    title: "Collect cash from Al-Madina Sweets",
-    description: "Collect pending balance of Rs. 4,500 from last week's deliveries.",
-    priority: "NORMAL",
-    status: "COMPLETED",
-    category: "FINANCE",
-    assignedAt: "Yesterday, 11:00 AM",
-    completedAt: "Today, 10:30 AM",
-  },
-];
+import { useRole } from "@/lib/use-role";
+import { useTasks, useUpdateTask } from "@/features/tasks/api/use-tasks";
 
 export default function TasksScreen() {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const { branchId } = useRole();
 
-  const pendingTasks = tasks.filter((t) => t.status === "PENDING");
+  // 1. Fetch data from React Query
+  const { data: tasks = [], isLoading, isError, refetch, isRefetching } = useTasks(branchId);
+  const { mutate: updateTask, isPending: isUpdating } = useUpdateTask();
+  const pendingTasks = tasks.filter((t) => t.status === "INCOMPLETE");
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
 
+  // 4. Handle Toggle via API Mutation
   const handleToggleTask = (taskId: string) => {
-    const currentTime = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.id === taskId) {
-          const willBeCompleted = task.status === "PENDING";
-          return {
-            ...task,
-            status: willBeCompleted ? "COMPLETED" : "PENDING",
-            completedAt: willBeCompleted ? `Today, ${currentTime}` : undefined,
-          };
-        }
-        return task;
-      })
-    );
+    if (isUpdating) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const newStatus = task.status === "INCOMPLETE" ? "COMPLETED" : "INCOMPLETE";
+    updateTask({ id: taskId, payload: { status: newStatus } });
   };
+
+  // Loading State
+  if (isLoading && !isRefetching) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#0284c7" />
+        <Text className="mt-4 text-slate-500 font-medium">Loading tasks...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Error State
+  if (isError) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center px-4">
+        <Text className="text-rose-500 font-bold text-lg mb-2">Connection Error</Text>
+        <Text className="text-slate-500 text-center mb-4">Could not load tasks. Please check your internet connection.</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+      {/* Header */}
       <View className="px-4 py-3 bg-white border-b border-slate-200">
         <View className="flex-row items-center gap-2">
           <View className="h-9 w-9 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
             <ClipboardList size={25} color="#0284c7" />
           </View>
-      
+          <Text className="text-lg font-bold text-slate-900">My Tasks</Text>
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 px-4 pt-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={["#0284c7"]}
+            tintColor="#0284c7"
+          />
+        }
+      >
+        {/* Pending Tasks */}
         {pendingTasks.length > 0 && (
           <View className="mb-4">
             <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -86,6 +79,7 @@ export default function TasksScreen() {
           </View>
         )}
 
+        {/* Empty State */}
         {pendingTasks.length === 0 && (
           <View className="items-center justify-center py-8 mb-4 bg-emerald-50 rounded-2xl border border-emerald-100">
             <Text className="text-sm font-bold text-emerald-700">All caught up!</Text>
@@ -93,6 +87,7 @@ export default function TasksScreen() {
           </View>
         )}
 
+        {/* Completed Tasks */}
         {completedTasks.length > 0 && (
           <View className="mb-6">
             <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">

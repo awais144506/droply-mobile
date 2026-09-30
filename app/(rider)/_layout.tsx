@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
-import { AppState } from "react-native";
+import { AppState, View } from "react-native";
 import { Tabs } from "expo-router";
 import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
-import { View } from "react-native";
 import { useApiClient } from "@/lib/api-client";
 import Toast from "react-native-toast-message";
 
@@ -11,16 +10,12 @@ export default function RiderLayout() {
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
-    // 🔥 Added showToast parameter (defaults to false)
     const updatePresence = async (status: 'ONLINE' | 'OFFLINE', showToast: boolean = false) => {
       try {
         console.log(`Attempting to send ${status} to server...`);
-        // Fire-and-forget
         api.post('/tracking/presence', { status })
           .then(() => console.log(`SUCCESS: Marked ${status}`))
           .catch(err => console.log(`FAILED to mark ${status}:`, err.message));
-
-        // 🔥 Only show toast if explicitly requested
         if (status === 'ONLINE' && showToast) {
           Toast.show({
             type: 'success',

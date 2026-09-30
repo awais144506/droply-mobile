@@ -1,69 +1,103 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import * as Location from "expo-location";
-import { ArrowLeft, User, Phone, MapPinned, Building2, RefreshCw, Send } from "lucide-react-native";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { ArrowLeft, User, Phone, Building2, Send } from "lucide-react-native";
+import PhoneInput from "react-native-phone-number-input";
+import { useRequestNewCustomer } from "@/features/orders/api/use-customer";
+import { useRole } from "@/lib/use-role";
+// 🔥 Import the new CustomAlert
+import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
+
+// 1. Define the Yup validation schema
+const schema = yup.object().shape({
+  name: yup.string().required("Customer name is required"),
+  phone: yup
+    .string()
+    // Validation for international E.164 format (e.g., +923001234567)
+    .matches(/^\+[1-9]\d{1,14}$/, "Please enter a valid phone number")
+    .required("Phone number is required"),
+  address: yup.string().required("Address is required"),
+});
+
+type FormData = yup.InferType<typeof schema>;
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();
+  const { userId, branchId } = useRole();
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  
-  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [isFetchingGps, setIsFetchingGps] = useState(false);
+  // Connect the mutation hook
+  const { mutate: createRequest } = useRequestNewCustomer();
 
-  useEffect(() => {
-    captureLocation();
-  }, []);
+  // 🔥 State to manage our custom alert
+  const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
+    visible: false,
+    title: "",
+    message: "",
+    onConfirm: () => { },
+  });
 
-  const captureLocation = async () => {
-    setIsFetchingGps(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "GPS is required to tag the customer's location for the owner.");
-        setIsFetchingGps(false);
-        return;
-      }
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      setLocationCoords({ lat: location.coords.latitude, lng: location.coords.longitude });
-    } catch {
-      Alert.alert("GPS Error", "Failed to fetch location. Please try again.");
-    } finally {
-      setIsFetchingGps(false);
-    }
+  const showAlert = (config: Omit<CustomAlertProps, "visible">) => {
+    setAlertConfig({ ...config, visible: true });
   };
 
-  const handleSendToManager = () => {
-    if (!name.trim() || !locationCoords) {
-      Alert.alert("Missing Info", "Customer name and GPS location are required to submit the request.");
-      return;
-    }
-    
-    Alert.alert(
-      "Send to Management",
-      `Send new customer details for "${name}" directly to the plant manager for database approval?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Submit Request", 
-          onPress: () => {
-            Alert.alert("Success", "Customer request and GPS pin sent to plant owner for review.", [
-              { text: "OK", onPress: () => router.back() }
-            ]);
-          } 
-        },
-      ]
-    );
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
+
+  // 2. Initialize React Hook Form
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      phone: "",
+      address: "",
+    },
+  });
+
+  // 3. Form Submit Handler using CustomAlert
+  const onSubmit = (data: FormData) => {
+    const payload = {
+      ...data,
+      requestedById: userId,
+      branchId,
+    };
+
+    showAlert({
+      title: "Send to Management",
+      message: `Send  "${data.name}" customer details to manager?`,
+      confirmText: "Submit Request",
+      cancelText: "Cancel",
+      onCancel: closeAlert,
+      onConfirm: () => {
+        closeAlert();
+        // Fire mutation
+        createRequest(payload);
+      },
+    });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-        
+
         <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
           <TouchableOpacity onPress={() => router.back()} className="h-9 w-9 bg-slate-100 rounded-xl items-center justify-center">
             <ArrowLeft size={18} color="#334155" />
@@ -73,68 +107,110 @@ export default function AddNewCustomerScreen() {
         </View>
 
         <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-          
+
           <View className="mb-4 bg-sky-50 border border-sky-200 p-3.5 rounded-2xl">
             <Text className="text-xs font-bold text-sky-900 mb-0.5">Manager Approval Required</Text>
             <Text className="text-[11px] text-sky-700 leading-relaxed">
-              Riders cannot directly add accounts. Submitting this form will ping the plant manager with the customer details and exact GPS coordinates to register them into the system.
+              Riders cannot directly add accounts. Submitting this form will ping the plant manager with the customer details to register them into the system.
             </Text>
           </View>
 
           <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 shadow-sm">
             <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-3">Customer Details</Text>
 
-            <View className="space-y-3">
-              <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12">
-                <User size={16} color="#64748b" />
-                <TextInput value={name} onChangeText={setName} placeholder="Customer Name or Shop" placeholderTextColor="#94a3b8" className="flex-1 ml-2 text-sm font-semibold text-slate-900" />
-              </View>
+            <View className="gap-4">
 
-              <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12">
-                <Phone size={16} color="#64748b" />
-                <TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="Phone Number" placeholderTextColor="#94a3b8" className="flex-1 ml-2 text-sm font-semibold text-slate-900" />
-              </View>
-
-              <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12">
-                <Building2 size={16} color="#64748b" />
-                <TextInput value={address} onChangeText={setAddress} placeholder="Shop # / Area / Address" placeholderTextColor="#94a3b8" className="flex-1 ml-2 text-sm font-semibold text-slate-900" />
-              </View>
-            </View>
-
-            <View className="mt-5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex-row items-center justify-between">
-              <View className="flex-row items-center gap-3">
-                <View className="h-10 w-10 bg-emerald-100 rounded-full items-center justify-center">
-                  <MapPinned size={20} color="#059669" />
+              {/* Name Field */}
+              <View>
+                <View className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${errors.name ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'}`}>
+                  <User size={16} color={errors.name ? "#f43f5e" : "#64748b"} />
+                  <Controller
+                    control={control}
+                    name="name"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        placeholder="Customer Name or Shop Name..."
+                        placeholderTextColor="#94a3b8"
+                        className="flex-1 ml-2 text-sm font-semibold text-slate-900"
+                      />
+                    )}
+                  />
                 </View>
-                <View>
-                  <Text className="text-xs font-bold text-emerald-800">Tagged GPS Location</Text>
-                  {isFetchingGps ? (
-                    <Text className="text-[10px] text-emerald-600">Acquiring GPS...</Text>
-                  ) : locationCoords ? (
-                    <Text className="text-[10px] text-emerald-600 font-mono">
-                      {locationCoords.lat.toFixed(5)}, {locationCoords.lng.toFixed(5)}
-                    </Text>
-                  ) : (
-                    <Text className="text-[10px] text-rose-600">Failed to capture</Text>
-                  )}
-                </View>
+                {errors.name && <Text className="text-[10px] text-rose-500 font-medium mt-1 ml-1">{errors.name.message}</Text>}
               </View>
-              
-              <TouchableOpacity onPress={captureLocation} disabled={isFetchingGps} className="p-2 bg-white rounded-full shadow-xs border border-emerald-100">
-                {isFetchingGps ? <ActivityIndicator size="small" color="#059669" /> : <RefreshCw size={14} color="#059669" />}
-              </TouchableOpacity>
+
+              {/* Phone Field */}
+              <View>
+                <View className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 overflow-hidden ${errors.phone ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'}`}>
+                  <Phone size={16} color={errors.phone ? "#f43f5e" : "#64748b"} />
+                  <Controller
+                    control={control}
+                    name="phone"
+                    render={({ field: { onChange, value } }) => (
+                      <PhoneInput
+                        defaultValue={value}
+                        defaultCode="PK"
+                        layout="first"
+                        onChangeFormattedText={(text) => {
+                          onChange(text);
+                        }}
+                        placeholder="Phone Number"
+                        containerStyle={{ flex: 1, backgroundColor: 'transparent', height: 48 }}
+                        textContainerStyle={{ backgroundColor: 'transparent', paddingVertical: 0, paddingHorizontal: 0 }}
+                        textInputStyle={{ fontSize: 14, fontWeight: "600", color: "#0f172a", height: 48, padding: 0, margin: 0 }}
+                        codeTextStyle={{ fontSize: 14, fontWeight: "600", color: "#0f172a", marginLeft: -15 }}
+                        flagButtonStyle={{ width: 45, marginLeft: -5 }}
+                        withShadow={false}
+                      />
+                    )}
+                  />
+                </View>
+                {errors.phone && <Text className="text-[10px] text-rose-500 font-medium mt-1 ml-1">{errors.phone.message}</Text>}
+              </View>
+
+              {/* Address Field */}
+              <View>
+                <View className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${errors.address ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'}`}>
+                  <Building2 size={16} color={errors.address ? "#f43f5e" : "#64748b"} />
+                  <Controller
+                    control={control}
+                    name="address"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        placeholder="Shop # / Area / Address"
+                        placeholderTextColor="#94a3b8"
+                        className="flex-1 ml-2 text-sm font-semibold text-slate-900"
+                      />
+                    )}
+                  />
+                </View>
+                {errors.address && <Text className="text-[10px] text-rose-500 font-medium mt-1 ml-1">{errors.address.message}</Text>}
+              </View>
+
             </View>
           </View>
         </ScrollView>
 
         <View className="p-4 bg-white border-t border-slate-200">
-          <TouchableOpacity onPress={handleSendToManager} className="w-full h-12 bg-sky-600 rounded-xl items-center justify-center flex-row gap-2 active:bg-sky-700 shadow-sm">
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            className="w-full h-12 bg-sky-600 rounded-xl items-center justify-center flex-row gap-2 active:bg-sky-700 shadow-sm"
+          >
             <Send size={16} color="#ffffff" />
             <Text className="text-white text-sm font-bold">Send Request to Manager</Text>
           </TouchableOpacity>
         </View>
 
       </KeyboardAvoidingView>
+
+      {/* 🔥 Render the Custom Alert outside the KeyboardAvoidingView */}
+      <CustomAlert {...alertConfig} />
     </SafeAreaView>
   );
 }
