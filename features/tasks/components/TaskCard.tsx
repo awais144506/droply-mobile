@@ -63,24 +63,19 @@ export const TaskCard = ({ task, onToggle }: TaskCardProps) => {
                   }`}
                 numberOfLines={1}
               >
-                {task.assignedByName}
+                By: {task.assignedByName}
               </Text>
 
               {/* Extracted the role into a proper visual badge */}
               <View
-                className={`self-start px-1.5 py-0.5 rounded-md mt-0.5 ${isCompleted
-                  ? "bg-slate-200"
-                  : task.assignedByRole === "OWNER"
-                    ? "bg-amber-100"
-                    : "bg-indigo-100"
-                  }`}
+                className={`self-start p-0.5 rounded-md mt-0.5`}
               >
                 <Text
-                  className={`text-[9px] font-black uppercase tracking-wider ${isCompleted
+                  className={`text-[9px] font-bold uppercase tracking-wider ${isCompleted
                     ? "text-slate-400"
                     : task.assignedByRole === "OWNER"
-                      ? "text-amber-700"
-                      : "text-indigo-700"
+                      ? "text-amber-600"
+                      : "text-indigo-600"
                     }`}
                 >
                   {task.assignedByRole}

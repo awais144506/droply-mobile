@@ -26,6 +26,7 @@ export interface BranchProduct {
   trackingType: string;
   productCode: string;
   isActive: boolean;
+  unitOfMeasure: string;
 }
 
 // Simplified Zone/Customer types based on your backend return
@@ -74,8 +75,6 @@ export interface TransformedOrderData {
     returnablesLength: number;
   })[];
   totalCustomersCount: number;
-  
-  // 🔥 New Product Additions
   branchProducts: BranchProduct[];
   productOptions: (DropdownOption & {
     price: number;
@@ -108,7 +107,6 @@ export const useRiderOrderData = (branchId: string | undefined) => {
 
   return useQuery<RawOrderDataResponse, Error, TransformedOrderData>({
     queryKey: ["rider-order-data", branchId],
-    // Only run the query if branchId is available
     enabled: !!branchId,
     queryFn: () => ordersService.getRiderData(api, branchId!),
     staleTime: 1000 * 60 * 5,
@@ -126,8 +124,6 @@ export const useRiderOrderData = (branchId: string | undefined) => {
         id: z.id,
         label: z.name,
       }));
-
-      // 2. Flatten all customers across all zones into one single array
       const allCustomers: FlatAssignedCustomer[] = zones.flatMap((zone) =>
         (zone.customers || []).map((customer) => ({
           ...customer,
@@ -136,10 +132,9 @@ export const useRiderOrderData = (branchId: string | undefined) => {
         }))
       );
 
-      // 3. Customer dropdown options
       const customerOptions = allCustomers.map((cust) => ({
         id: cust.id,
-        label: `${cust.name} - ${cust.zoneName}`,
+        label: `${cust.name} - (${cust.phone})`,
         phone: cust.phone,
         zoneId: cust.zoneId,
         zoneName: cust.zoneName,
@@ -153,13 +148,13 @@ export const useRiderOrderData = (branchId: string | undefined) => {
         0
       );
 
-      // 5. 🔥 Product dropdown options mapping
-      const productOptions = branchProducts.map((product) => ({
+      const productOptions = branchProducts.filter(p => p.category !== "RAW_MATERIAL").map((product) => ({
         id: product.id,
-        label: product.name,
+        label: `${product.name} - (${product.category})`,
         price: product.salePrice,
         stock: product.currentStock,
         category: product.category,
+        unit: product.unitOfMeasure,
       }));
 
       return {

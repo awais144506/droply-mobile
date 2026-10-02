@@ -1,344 +1,293 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  RefreshControl,
-  ActivityIndicator
-} from "react-native";
+import { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { ShoppingCart, Minus, Plus, CheckCircle2, UserPlus, CalendarDays, PackageSearch, PlusCircle, Trash2 } from "lucide-react-native";
-import SearchableSelect from "@/components/ui/SearchableSelect";
-import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
-import { useUser } from "@clerk/clerk-expo";
-import { useRiderOrderData } from "@/features/orders/api/use-order";
+import {
+  WifiOff,
+  CheckCircle2,
+  Trash2,
+  Package,
+  Clock,
+  MapPin,
+  ShoppingCart,
+  UserPlus,
+  ArrowRight,
+  Bike,
+  CalendarDays,
+  Inbox
+} from "lucide-react-native";
+import { useOfflineOrderStore } from "@/store/seOfflineOrderStore";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-type ScheduleMode = "TODAY" | "TOMORROW" | "LATER";
-
-interface CartItem {
-  productId: string;
-  name: string;
-  quantity: number;
-}
-
-export default function NewOrderScreen() {
+export default function OrdersScreen() {
   const router = useRouter();
-  const { user } = useUser();
-  const branchId = user?.publicMetadata?.branchId as string | undefined;
-  const { data, isLoading, refetch, isRefetching } = useRiderOrderData(branchId);
+  const { offlineQueue, syncedOrders, removeOrderFromQueue } = useOfflineOrderStore();
 
-  const zoneOptions = data?.zoneOptions || [];
-  const allCustomers = data?.customerOptions || [];
-  const productOptions = data?.productOptions || [];
-
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [quantityRequested, setQuantityRequested] = useState(1);
-
-  const [schedule, setSchedule] = useState<ScheduleMode>("TODAY");
-
-  const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
-    visible: false,
-    title: "",
-    message: "",
-    onConfirm: () => { },
-  });
-
-  const showAlert = (config: Omit<CustomAlertProps, "visible">) => {
-    setAlertConfig({ ...config, visible: true });
-  };
-
-  const closeAlert = () => {
-    setAlertConfig((prev) => ({ ...prev, visible: false }));
-  };
-
-  const dayAfterTomorrow = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 2);
-    return date;
-  }, []);
-
-  const [customDate, setCustomDate] = useState<Date>(dayAfterTomorrow);
+  const [activeFilter, setActiveFilter] = useState<'today' | 'yesterday' | 'tomorrow' | 'custom'>('today');
+  const [customDate, setCustomDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // Filter customers based on the selected zone
-  const availableCustomers = useMemo(() => {
-    if (!selectedZoneId) return [];
-    return allCustomers.filter(customer => customer.zoneId === selectedZoneId);
-  }, [selectedZoneId, allCustomers]);
+  
+  // 🔥 New state to toggle the lists (default is synced)
+  const [activeList, setActiveList] = useState<'synced' | 'pending'>('synced');
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") setShowDatePicker(false);
+    setShowDatePicker(false);
     if (selectedDate) {
       setCustomDate(selectedDate);
-      setSchedule("LATER");
+      setActiveFilter('custom');
     }
-  };
-
-
-  const handleAddToCart = () => {
-    if (!selectedProductId) return;
-
-    const product = productOptions.find(p => p.id === selectedProductId);
-    if (!product) return;
-
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.productId === selectedProductId);
-      if (existingItem) {
-        return prev.map(item =>
-          item.productId === selectedProductId
-            ? { ...item, quantity: item.quantity + quantityRequested }
-            : item
-        );
-      }
-      return [...prev, { productId: selectedProductId, name: product.label, quantity: quantityRequested }];
-    });
-
-    // Reset temporary selections
-    setSelectedProductId(null);
-    setQuantityRequested(1);
-  };
-
-  // 🔥 Handle removing an item from the cart
-  const handleRemoveItem = (productId: string) => {
-    setCartItems(prev => prev.filter(item => item.productId !== productId));
-  };
-
-  const handleGenerateOrder = () => {
-    if (!selectedZoneId) {
-      showAlert({ title: "Missing Zone", message: "Please select a zone first.", onConfirm: closeAlert });
-      return;
-    }
-    if (!selectedCustomerId) {
-      showAlert({ title: "Missing Customer", message: "Please select a customer.", onConfirm: closeAlert });
-      return;
-    }
-    if (cartItems.length === 0) {
-      showAlert({ title: "Empty Order", message: "Please add at least one product to the order.", onConfirm: closeAlert });
-      return;
-    }
-
-    const customerName = allCustomers.find(c => c.id === selectedCustomerId)?.label;
-
-    let scheduleText = String(schedule);
-    if (schedule === "LATER") {
-      scheduleText = customDate.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' });
-    }
-
-    const productsListText = cartItems.map(item => `• ${item.quantity}x ${item.name}`).join('\n');
-
-    showAlert({
-      title: "Confirm Order Details",
-      message: `Customer: ${customerName}\nScheduled for: ${scheduleText}\n\nItems:\n${productsListText}`,
-      confirmText: "Generate Order",
-      cancelText: "Cancel",
-      onCancel: closeAlert,
-      onConfirm: () => {
-        closeAlert();
-        // Fire mutation here in the future
-        router.back();
-      }
-    });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-
-        <View className="px-4 py-3 bg-white border-b border-slate-200">
-          <View className="flex-row items-center gap-2">
-            <View className="h-9 w-9 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
-              <ShoppingCart size={25} color="#0284c7" />
-            </View>
-            <Text className="text-lg font-bold text-slate-900">Create Order</Text>
+      {/* Header */}
+      <View className="px-5 py-4 bg-white border-b border-slate-200 flex-row items-center justify-between z-10">
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+            <Bike size={20} color="#0284c7" />
+          </View>
+          <View>
+            <Text className="text-lg font-extrabold text-slate-900">Operation Hub</Text>
+            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Manage & Review</Text>
           </View>
         </View>
+      </View>
 
-        <ScrollView
-          className="flex-1 px-4 pt-4"
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              colors={["#0284c7"]}
-              tintColor="#0284c7"
-            />
-          }
-        >
+      <ScrollView className="flex-1 px-4 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+
+        {/* 🎛️ THE 4 BIG ACTION CARDS */}
+        <View className="flex-row flex-wrap justify-between mb-6">
+
+          {/* Card 1: New Order */}
+          <TouchableOpacity
+            onPress={() => router.push("/sale/new-order")}
+            className="w-[48%] bg-sky-600 p-4 rounded-2xl mb-3 shadow-sm active:bg-sky-700"
+          >
+            <View className="h-10 w-10 bg-white/20 rounded-xl items-center justify-center mb-3">
+              <ShoppingCart size={20} color="#ffffff" />
+            </View>
+            <Text className="text-white font-bold mb-1">New Order</Text>
+            <View className="flex-row items-center gap-1">
+              <Text className="text-[10px] text-sky-100 font-medium">Point of Sale</Text>
+              <ArrowRight size={10} color="#bae6fd" />
+            </View>
+          </TouchableOpacity>
+
+          {/* Card 2: Create Customer */}
           <TouchableOpacity
             onPress={() => router.push("/sale/new-customer")}
-            className="mb-4 flex-row items-center justify-center gap-2 py-3 bg-slate-50 border border-slate-200 rounded-xl active:bg-slate-100"
+            className="w-[48%] bg-slate-800 p-4 rounded-2xl mb-3 shadow-sm active:bg-slate-900"
           >
-            <UserPlus size={16} color="#0284c7" />
-            <Text className="text-xs font-bold text-sky-700">Add New Customer</Text>
+            <View className="h-10 w-10 bg-white/10 rounded-xl items-center justify-center mb-3">
+              <UserPlus size={20} color="#ffffff" />
+            </View>
+            <Text className="text-white font-bold mb-1">Add Customer</Text>
+            <View className="flex-row items-center gap-1">
+              <Text className="text-[10px] text-slate-300 font-medium">Register New</Text>
+              <ArrowRight size={10} color="#cbd5e1" />
+            </View>
           </TouchableOpacity>
 
-          {/* Location & Customer Block */}
-          <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-4 shadow-sm">
-            <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-3">Delivery Destination</Text>
-
-            {isLoading ? (
-              <View className="py-6 items-center justify-center">
-                <ActivityIndicator size="small" color="#0284c7" />
-                <Text className="text-xs text-slate-400 mt-2">Loading data...</Text>
+          {/* 🔥 Card 3: Offline Queue (Now Clickable) */}
+          <TouchableOpacity 
+            onPress={() => setActiveList('pending')}
+            activeOpacity={0.8}
+            className={`w-[48%] p-4 rounded-2xl shadow-sm ${activeList === 'pending' ? 'bg-amber-100 border-2 border-amber-400' : 'bg-amber-50 border border-amber-200'}`}
+          >
+            <View className="flex-row justify-between items-start mb-3">
+              <View className="h-10 w-10 bg-amber-100 rounded-xl items-center justify-center">
+                <WifiOff size={20} color="#d97706" />
               </View>
-            ) : (
-              <View className="gap-3">
-                <SearchableSelect
-                  label="Select Zone"
-                  placeholder="Tap to select zone..."
-                  options={zoneOptions}
-                  selectedValue={selectedZoneId}
-                  onSelect={(id) => {
-                    setSelectedZoneId(id);
-                    setSelectedCustomerId(null);
-                  }}
-                />
-
-                <View className={`${!selectedZoneId ? 'opacity-50' : ''}`}>
-                  <SearchableSelect
-                    label="Select Customer"
-                    placeholder={selectedZoneId ? "Tap to select customer..." : "Please select a zone first"}
-                    options={availableCustomers}
-                    selectedValue={selectedCustomerId}
-                    onSelect={setSelectedCustomerId}
-                    disabled={!selectedZoneId}
-                  />
-                  {selectedZoneId && availableCustomers.length === 0 && (
-                    <Text className="text-[10px] text-rose-500 mt-1 ml-1">No customers found in this zone.</Text>
-                  )}
-                </View>
-              </View>
-            )}
-          </View>
-
-          {/* 🔥 Multi-Item Product Selection Block */}
-          <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-4 shadow-sm z-50">
-            <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-3">Add Products</Text>
-
-            <SearchableSelect
-              label="Select Product"
-              placeholder="Search branch products..."
-              options={productOptions}
-              selectedValue={selectedProductId}
-              onSelect={setSelectedProductId}
-            />
-
-            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-slate-100">
-              <View className="flex-row items-center gap-2 flex-1 pr-3">
-                <View className="h-8 w-8 rounded-lg bg-sky-50 items-center justify-center border border-sky-100">
-                  <PackageSearch size={16} color="#0284c7" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-sm font-bold text-slate-800">Quantity</Text>
-                  <Text className="text-[10px] text-slate-500" numberOfLines={1}>
-                    {selectedProductId ? productOptions.find(p => p.id === selectedProductId)?.label : "Select a product above"}
-                  </Text>
-                </View>
-              </View>
-
-              <View className="flex-row items-center bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                <TouchableOpacity onPress={() => setQuantityRequested((prev) => Math.max(1, prev - 1))} className="h-8 w-8 bg-white rounded-lg items-center justify-center border border-slate-200">
-                  <Minus size={16} color="#0f172a" />
-                </TouchableOpacity>
-                <Text className="w-8 text-center text-lg font-bold text-slate-900">{quantityRequested}</Text>
-                <TouchableOpacity onPress={() => setQuantityRequested((prev) => prev + 1)} className="h-8 w-8 bg-white rounded-lg items-center justify-center border border-slate-200">
-                  <Plus size={16} color="#0f172a" />
-                </TouchableOpacity>
+              {/* Badge Number */}
+              <View className="h-7 w-7 bg-amber-500 rounded-full items-center justify-center">
+                <Text className="text-white text-xs font-black">{offlineQueue.length}</Text>
               </View>
             </View>
+            <Text className="text-amber-900 font-bold mb-0.5">Pending Sync</Text>
+            <Text className="text-[10px] text-amber-700 font-medium">Waiting for network</Text>
+          </TouchableOpacity>
 
+          {/* 🔥 Card 4: Synced Orders (Now Clickable) */}
+          <TouchableOpacity 
+            onPress={() => setActiveList('synced')}
+            activeOpacity={0.8}
+            className={`w-[48%] p-4 rounded-2xl shadow-sm ${activeList === 'synced' ? 'bg-emerald-100 border-2 border-emerald-400' : 'bg-emerald-50 border border-emerald-200'}`}
+          >
+            <View className="flex-row justify-between items-start mb-3">
+              <View className="h-10 w-10 bg-emerald-100 rounded-xl items-center justify-center">
+                <CheckCircle2 size={20} color="#059669" />
+              </View>
+              {/* Badge Number */}
+              <View className="h-7 w-7 bg-emerald-500 rounded-full items-center justify-center">
+                <Text className="text-white text-xs font-black">{syncedOrders.length}</Text>
+              </View>
+            </View>
+            <Text className="text-emerald-900 font-bold mb-0.5">Synced Orders</Text>
+            <Text className="text-[10px] text-emerald-700 font-medium">Completed today</Text>
+          </TouchableOpacity>
+
+        </View>
+
+        {/* DATE FILTER BAR */}
+        <View className="mb-4">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+          >
             <TouchableOpacity
-              onPress={handleAddToCart}
-              disabled={!selectedProductId}
-              className={`mt-4 py-3 rounded-xl flex-row items-center justify-center gap-2 ${selectedProductId ? "bg-slate-800 active:bg-slate-900" : "bg-slate-100 opacity-70"
-                }`}
+              onPress={() => setActiveFilter('today')}
+              className={`px-4 py-2 rounded-full border ${activeFilter === 'today' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
             >
-              <PlusCircle size={16} color={selectedProductId ? "#ffffff" : "#94a3b8"} />
-              <Text className={`text-sm font-bold ${selectedProductId ? "text-white" : "text-slate-400"}`}>
-                Add to Order
+              <Text className={`text-sm font-bold ${activeFilter === 'today' ? 'text-white' : 'text-slate-600'}`}>
+                Today
               </Text>
             </TouchableOpacity>
-          </View>
 
-          {/* 🔥 Added Items Cart Summary */}
-          {cartItems.length > 0 && (
-            <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-4 shadow-sm z-0">
-              <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-3">Order Summary</Text>
-              <View className="gap-2">
-                {cartItems.map((item) => (
-                  <View key={item.productId} className="flex-row items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <View className="flex-1 pr-3">
-                      <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{item.name}</Text>
-                      <Text className="text-xs font-semibold text-sky-600 mt-0.5">Qty: {item.quantity}</Text>
+            <TouchableOpacity
+              onPress={() => setActiveFilter('yesterday')}
+              className={`px-4 py-2 rounded-full border ${activeFilter === 'yesterday' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
+            >
+              <Text className={`text-sm font-bold ${activeFilter === 'yesterday' ? 'text-white' : 'text-slate-600'}`}>
+                Yesterday
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setActiveFilter('tomorrow')}
+              className={`px-4 py-2 rounded-full border ${activeFilter === 'tomorrow' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
+            >
+              <Text className={`text-sm font-bold ${activeFilter === 'tomorrow' ? 'text-white' : 'text-slate-600'}`}>
+                Tomorrow
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              className={`px-4 py-2 rounded-full border flex-row items-center gap-2 ${activeFilter === 'custom' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
+            >
+              <CalendarDays size={14} color={activeFilter === 'custom' ? '#ffffff' : '#475569'} />
+              <Text className={`text-sm font-bold ${activeFilter === 'custom' ? 'text-white' : 'text-slate-600'}`}>
+                {activeFilter === 'custom' ? customDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Pick Date'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {/* Native Date Picker */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={customDate}
+              mode="date"
+              display="default"
+              onChange={handleDateChange} // Fixed onValueChange to onChange for standard picker compatibility
+            />
+          )}
+        </View>
+
+        <View className="h-[1px] w-full bg-slate-200 mb-6" />
+
+        {/* 🟡 OFFLINE QUEUE LIST (Only shows if activeList is 'pending') */}
+        {activeList === 'pending' && (
+          <View className="mb-6">
+            <View className="flex-row items-center gap-2 mb-3 px-1">
+              <WifiOff size={16} color="#d97706" />
+              <Text className="text-[11px] text-amber-600 font-bold uppercase tracking-wider">Waiting Network ({offlineQueue.length})</Text>
+            </View>
+
+            {offlineQueue.length === 0 ? (
+               <View className="bg-amber-50/50 p-6 rounded-[20px] border border-amber-200 border-dashed items-center justify-center">
+                 <Inbox size={32} color="#fcd34d" />
+                 <Text className="text-amber-800 font-bold mt-3">No pending orders</Text>
+                 <Text className="text-amber-600 text-xs text-center mt-1">All orders are safely synced to the server.</Text>
+               </View>
+            ) : (
+              offlineQueue.map((order) => (
+                <View key={order.id} className="bg-amber-50 p-4 rounded-[20px] border border-amber-200 shadow-sm mb-3">
+                  <View className="flex-row justify-between items-start mb-3">
+                    <View>
+                      <Text className="text-sm font-bold text-slate-900">{order.customerName}</Text>
+                      <View className="flex-row items-center gap-1 mt-1">
+                        <MapPin size={10} color="#92400e" />
+                        <Text className="text-[10px] font-semibold text-amber-800">{order.zoneName}</Text>
+                      </View>
                     </View>
-                    <TouchableOpacity
-                      onPress={() => handleRemoveItem(item.productId)}
-                      className="h-8 w-8 bg-rose-50 rounded-lg items-center justify-center border border-rose-100"
+                    <Text className="text-lg font-black text-amber-900">Rs. {order.totalAmount}</Text>
+                  </View>
+  
+                  <View className="h-[1px] w-full bg-amber-200/50 my-2" />
+  
+                  <View className="flex-row items-center justify-between mt-1">
+                    <View className="flex-row items-center gap-3">
+                      <View className="flex-row items-center gap-1">
+                        <Package size={12} color="#b45309" />
+                        <Text className="text-xs font-bold text-amber-700">{order.itemsCount} Items</Text>
+                      </View>
+                      <View className="flex-row items-center gap-1">
+                        <Clock size={12} color="#b45309" />
+                        <Text className="text-xs font-bold text-amber-700">{order.time}</Text>
+                      </View>
+                    </View>
+  
+                    <TouchableOpacity className="flex-row items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-amber-200 active:bg-amber-100"
+                      onPress={() => removeOrderFromQueue(order.id)}
                     >
-                      <Trash2 size={16} color="#e11d48" />
+                      <Trash2 size={14} color="#e11d48" />
+                      <Text className="text-xs font-bold text-rose-600">Delete</Text>
                     </TouchableOpacity>
                   </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Scheduling Block */}
-          <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 shadow-sm z-0">
-            <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-2">
-                <CalendarDays size={16} color="#64748b" />
-                <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Delivery Schedule</Text>
-              </View>
-
-              {Platform.OS === "ios" && showDatePicker && (
-                <DateTimePicker value={customDate} mode="date" display="compact" minimumDate={dayAfterTomorrow} onChange={handleDateChange} />
-              )}
-            </View>
-
-            <View className="flex-row gap-2">
-              <TouchableOpacity onPress={() => { setSchedule("TODAY"); setShowDatePicker(false); }} className={`flex-1 py-2.5 rounded-xl border items-center justify-center ${schedule === "TODAY" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"}`}>
-                <Text className={`text-xs font-bold ${schedule === "TODAY" ? "text-sky-700" : "text-slate-600"}`}>Today</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => { setSchedule("TOMORROW"); setShowDatePicker(false); }} className={`flex-1 py-2.5 rounded-xl border items-center justify-center ${schedule === "TOMORROW" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"}`}>
-                <Text className={`text-xs font-bold ${schedule === "TOMORROW" ? "text-sky-700" : "text-slate-600"}`}>Tomorrow</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => { setSchedule("LATER"); setShowDatePicker(true); }} className={`flex-1 py-2.5 rounded-xl border items-center justify-center ${schedule === "LATER" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"}`}>
-                <Text className={`text-xs font-bold ${schedule === "LATER" ? "text-sky-700" : "text-slate-600"}`}>
-                  {schedule === "LATER" ? customDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Pick Date"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {Platform.OS === "android" && showDatePicker && (
-              <DateTimePicker value={customDate} mode="date" display="default" minimumDate={dayAfterTomorrow} onChange={handleDateChange} />
+                </View>
+              ))
             )}
           </View>
-        </ScrollView>
+        )}
 
-        <View className="p-4 bg-white border-t border-slate-200">
-          <TouchableOpacity onPress={handleGenerateOrder} className="w-full h-12 bg-sky-600 rounded-xl items-center justify-center flex-row gap-2 active:bg-sky-700 shadow-sm">
-            <CheckCircle2 size={18} color="#ffffff" />
-            <Text className="text-white text-sm font-bold">Generate Order</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        {/* 🟢 SYNCED ORDERS LIST (Only shows if activeList is 'synced') */}
+        {activeList === 'synced' && (
+          <View className="mb-6">
+            <View className="flex-row items-center gap-2 mb-3 px-1">
+              <CheckCircle2 size={16} color="#059669" />
+              <Text className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">Today&apos;s Orders ({syncedOrders.length})</Text>
+            </View>
 
-      {/* Render the Custom Alert outside the KeyboardAvoidingView */}
-      <CustomAlert {...alertConfig} />
+            {syncedOrders.length === 0 ? (
+               <View className="bg-slate-50 p-6 rounded-[20px] border border-slate-200 border-dashed items-center justify-center">
+                 <Inbox size={32} color="#cbd5e1" />
+                 <Text className="text-slate-600 font-bold mt-3">No orders found</Text>
+                 <Text className="text-slate-400 text-xs text-center mt-1">You have not completed any orders for this date yet.</Text>
+               </View>
+            ) : (
+              syncedOrders.map((order) => (
+                <View key={order.id} className="bg-white p-4 rounded-[20px] border border-slate-200 shadow-sm mb-3">
+                  <View className="flex-row justify-between items-start mb-3">
+                    <View>
+                      <Text className="text-sm font-bold text-slate-900">{order.customerName}</Text>
+                      <View className="flex-row items-center gap-1 mt-1">
+                        <MapPin size={10} color="#64748b" />
+                        <Text className="text-[10px] font-semibold text-slate-500">{order.zoneName}</Text>
+                      </View>
+                    </View>
+                    <Text className="text-lg font-black text-slate-900">Rs. {order.totalAmount}</Text>
+                  </View>
+  
+                  <View className="h-[1px] w-full bg-slate-100 my-2" />
+  
+                  <View className="flex-row items-center gap-3 mt-1">
+                    <View className="flex-row items-center gap-1">
+                      <Package size={12} color="#64748b" />
+                      <Text className="text-xs font-bold text-slate-500">{order.itemsCount} Items</Text>
+                    </View>
+                    <View className="flex-row items-center gap-1">
+                      <CheckCircle2 size={12} color="#059669" />
+                      <Text className="text-xs font-bold text-emerald-600">{order.time}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -4,8 +4,8 @@ import { ClipboardList } from "lucide-react-native";
 import { TaskCard } from "@/features/tasks/components/TaskCard";
 import { useRole } from "@/lib/use-role";
 import { useTasks, useUpdateTask } from "@/features/tasks/api/use-tasks";
-import { Loading } from "../loading";
-import { Error } from "../error";
+import Loading from "../loading";
+import Error from "../error";
 
 export default function TasksScreen() {
   const { branchId } = useRole();
@@ -23,7 +23,7 @@ export default function TasksScreen() {
     updateTask({ id: taskId, payload: { status: newStatus } });
   };
 
-  if (isLoading && !isRefetching) return <Loading text="Tasks" />
+  if (isLoading && !isRefetching) return <Loading text="Loading Tasks..." />
   if (isError) return <Error text="tasks" />
 
   return (

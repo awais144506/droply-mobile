@@ -61,6 +61,7 @@ export default function SearchableSelect({
 
       {isOpen && (
         <View className="bg-white border border-slate-300 border-t-0 rounded-b-xl overflow-hidden shadow-sm">
+          {/* Search Input */}
           <View className="p-2 border-b border-slate-100 bg-slate-50">
             <View className="flex-row items-center bg-white border border-slate-200 rounded-lg px-2 h-10">
               <Search size={14} color="#94a3b8" />
@@ -78,7 +79,13 @@ export default function SearchableSelect({
               )}
             </View>
           </View>
-          <ScrollView className="max-h-48" nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          
+          {/* List Renderer - Now using ScrollView to avoid FlatList nesting crash */}
+          <ScrollView 
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+            style={{ maxHeight: 200 }}
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((item) => {
                 const isSelected = item.id === selectedValue;

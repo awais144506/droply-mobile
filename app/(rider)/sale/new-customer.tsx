@@ -13,19 +13,18 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { ArrowLeft, User, Phone, Building2, Send } from "lucide-react-native";
+import { ArrowLeft, User, UserPlus, Phone, Building2, Send } from "lucide-react-native";
 import PhoneInput from "react-native-phone-number-input";
 import { useRequestNewCustomer } from "@/features/orders/api/use-customer";
 import { useRole } from "@/lib/use-role";
-// 🔥 Import the new CustomAlert
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
+import Loading from "@/app/loading";
 
 // 1. Define the Yup validation schema
 const schema = yup.object().shape({
   name: yup.string().required("Customer name is required"),
   phone: yup
     .string()
-    // Validation for international E.164 format (e.g., +923001234567)
     .matches(/^\+[1-9]\d{1,14}$/, "Please enter a valid phone number")
     .required("Phone number is required"),
   address: yup.string().required("Address is required"),
@@ -37,16 +36,15 @@ export default function AddNewCustomerScreen() {
   const router = useRouter();
   const { userId, branchId } = useRole();
 
-  // Connect the mutation hook
-  const { mutate: createRequest } = useRequestNewCustomer();
+  const { mutate: createRequest, isPending } = useRequestNewCustomer();
 
-  // 🔥 State to manage our custom alert
   const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
     visible: false,
     title: "",
     message: "",
     onConfirm: () => { },
   });
+  const [resetKey, setResetKey] = useState(0);
 
   const showAlert = (config: Omit<CustomAlertProps, "visible">) => {
     setAlertConfig({ ...config, visible: true });
@@ -61,7 +59,7 @@ export default function AddNewCustomerScreen() {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<FormData>({
     resolver: yupResolver(schema),
     mode: "onChange",
@@ -88,22 +86,30 @@ export default function AddNewCustomerScreen() {
       onCancel: closeAlert,
       onConfirm: () => {
         closeAlert();
-        // Fire mutation
         createRequest(payload);
+        reset();
+        setResetKey(prev => prev + 1);
       },
     });
   };
 
+  if (isPending) return <Loading text="Sending Request..." />
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
 
-        <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
-          <TouchableOpacity onPress={() => router.back()} className="h-9 w-9 bg-slate-100 rounded-xl items-center justify-center">
-            <ArrowLeft size={18} color="#334155" />
-          </TouchableOpacity>
-          <Text className="text-sm font-bold text-slate-900">Request New Customer</Text>
-          <View className="w-9" />
+        <View className="px-5 py-4 bg-white border-b border-slate-200 flex-row items-center gap-14 z-10">
+            <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} className="h-9 w-9 bg-slate-800 rounded-xl items-center justify-center">
+              <ArrowLeft size={18} color="#ffff" />
+            </TouchableOpacity>
+          <View className="flex-row items-center gap-3">
+            <View className="h-10 w-10 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+              <UserPlus size={20} color="#0f172a" />
+            </View>
+            <View>
+              <Text className="text-lg font-extrabold text-slate-900">Add New Customer</Text>
+            </View>
+          </View>
         </View>
 
         <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
@@ -151,13 +157,14 @@ export default function AddNewCustomerScreen() {
                     name="phone"
                     render={({ field: { onChange, value } }) => (
                       <PhoneInput
+                        key={`phone-input-${resetKey}`}
                         defaultValue={value}
                         defaultCode="PK"
                         layout="first"
                         onChangeFormattedText={(text) => {
                           onChange(text);
                         }}
-                        placeholder="Phone Number"
+                        placeholder="e.g 03216907425"
                         containerStyle={{ flex: 1, backgroundColor: 'transparent', height: 48 }}
                         textContainerStyle={{ backgroundColor: 'transparent', paddingVertical: 0, paddingHorizontal: 0 }}
                         textInputStyle={{ fontSize: 14, fontWeight: "600", color: "#0f172a", height: 48, padding: 0, margin: 0 }}
@@ -199,8 +206,10 @@ export default function AddNewCustomerScreen() {
 
         <View className="p-4 bg-white border-t border-slate-200">
           <TouchableOpacity
+            disabled={isPending || !isValid}
             onPress={handleSubmit(onSubmit)}
-            className="w-full h-12 bg-sky-600 rounded-xl items-center justify-center flex-row gap-2 active:bg-sky-700 shadow-sm"
+            className={`w-full h-12 rounded-xl items-center justify-center flex-row gap-2 shadow-sm ${(isPending || !isValid) ? "bg-gray-400" : "bg-sky-600 active:bg-sky-700"
+              }`}
           >
             <Send size={16} color="#ffffff" />
             <Text className="text-white text-sm font-bold">Send Request to Manager</Text>
@@ -209,7 +218,6 @@ export default function AddNewCustomerScreen() {
 
       </KeyboardAvoidingView>
 
-      {/* 🔥 Render the Custom Alert outside the KeyboardAvoidingView */}
       <CustomAlert {...alertConfig} />
     </SafeAreaView>
   );

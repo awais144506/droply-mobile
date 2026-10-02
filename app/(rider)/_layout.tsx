@@ -1,14 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef } from "react";
 import { AppState, View } from "react-native";
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
 import { useApiClient } from "@/lib/api-client";
 import Toast from "react-native-toast-message";
+import { useOrderSync } from "@/features/orders/api/use-order-sync";
 
 export default function RiderLayout() {
   const api = useApiClient();
   const appState = useRef(AppState.currentState);
+  const pathname = usePathname();
+  useOrderSync();
+  const isOrdersActive = pathname.includes('/orders') || pathname.includes('/sale');
 
   useEffect(() => {
     const updatePresence = async (status: 'ONLINE' | 'OFFLINE', showToast: boolean = false) => {
@@ -117,11 +121,15 @@ export default function RiderLayout() {
         name="orders"
         options={{
           title: "Orders",
-          tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
-              <Bike size={20} color={color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const active = focused || isOrdersActive;
+            const iconColor = active ? "#0284c7" : color;
+            return (
+              <View className={`items-center justify-center h-8 w-14 rounded-lg ${active ? "bg-sky-200" : ""}`}>
+                <Bike size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
       <Tabs.Screen
@@ -149,6 +157,7 @@ export default function RiderLayout() {
 
       <Tabs.Screen name="deliver/[stopId]" options={{ href: null }} />
       <Tabs.Screen name="sale/new-customer" options={{ href: null }} />
+      <Tabs.Screen name="sale/new-order" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -8,11 +8,11 @@ export const Footer = () => {
                 Droply Rider App
             </Text>
 
-            <Text className="text-[10px] font-bold text-slate-400/80 mt-1">
+            <Text className="text-[10px] font-bold text-slate-400 mt-1">
                 Version 1.0.0
             </Text>
 
-            <Text className="text-[9px] font-medium text-slate-400/60 mt-2.5">
+            <Text className="text-sm font-medium text-slate-400 mt-2.5">
                 © 2026 Droply Technologies
             </Text>
         </View>
