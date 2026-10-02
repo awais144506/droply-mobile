@@ -13,6 +13,9 @@
       "android": {
         "buildType": "apk"
       }
+    },
+    "playstore-staging": {
+      "distribution": "store"
     }
   },
   "submit": {
