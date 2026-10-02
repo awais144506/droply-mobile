@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Droply",
-    "slug": "Droply",
+    "slug": "droply",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -47,6 +47,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eb958749-b963-4106-84e0-258adbe537e0"
+      }
+    },
+    "owner": "awais144506"
   }
 }
