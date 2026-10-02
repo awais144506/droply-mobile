@@ -12,7 +12,7 @@ export const ordersService = {
     api: AxiosInstance,
     payload: CreateCustomerRequestPayload
   ) => {
-    const response = await api.post("/customer/request", payload);
+    const response = await api.post("/rider/request", payload);
     return response.data;
   },
 };

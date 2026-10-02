@@ -90,12 +90,12 @@ export const ordersService = {
     api: AxiosInstance,
     payload: CreateCustomerRequestPayload
   ) => {
-    const response = await api.post("/customer/request", payload);
+    const response = await api.post("/rider/request", payload);
     return response.data;
   },
 
   getRiderData: async (api: AxiosInstance, branchId: string): Promise<RawOrderDataResponse> => {
-    const response = await api.get(`/orders/rider/${branchId}`);
+    const response = await api.get(`/rider/${branchId}`);
     return response.data;
   },
 };
