@@ -29,7 +29,7 @@ export const useUpdateTask = () => {
             Toast.show({
                 type: 'success',
                 text1: 'Task Updated',
-                text2: 'You updated your task to successfully.',
+                text2: 'You updated your tasks successfully.',
                 position: 'top',
                 visibilityTime: 3000,
             });

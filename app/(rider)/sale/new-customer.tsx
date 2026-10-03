@@ -36,7 +36,7 @@ export default function AddNewCustomerScreen() {
   const router = useRouter();
   const { userId, branchId } = useRole();
 
-  const { mutate: createRequest, isPending } = useRequestNewCustomer();
+  const { mutate: createRequest, isPending } = useRequestNewCustomer(branchId);
 
   const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
     visible: false,

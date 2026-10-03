@@ -26,8 +26,6 @@ export default function OrdersScreen() {
   const [activeFilter, setActiveFilter] = useState<'today' | 'yesterday' | 'tomorrow' | 'custom'>('today');
   const [customDate, setCustomDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
-  // 🔥 New state to toggle the lists (default is synced)
   const [activeList, setActiveList] = useState<'synced' | 'pending'>('synced');
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -89,7 +87,7 @@ export default function OrdersScreen() {
           </TouchableOpacity>
 
           {/* 🔥 Card 3: Offline Queue (Now Clickable) */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveList('pending')}
             activeOpacity={0.8}
             className={`w-[48%] p-4 rounded-2xl shadow-sm ${activeList === 'pending' ? 'bg-amber-100 border-2 border-amber-400' : 'bg-amber-50 border border-amber-200'}`}
@@ -108,7 +106,7 @@ export default function OrdersScreen() {
           </TouchableOpacity>
 
           {/* 🔥 Card 4: Synced Orders (Now Clickable) */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveList('synced')}
             activeOpacity={0.8}
             className={`w-[48%] p-4 rounded-2xl shadow-sm ${activeList === 'synced' ? 'bg-emerald-100 border-2 border-emerald-400' : 'bg-emerald-50 border border-emerald-200'}`}
@@ -195,11 +193,11 @@ export default function OrdersScreen() {
             </View>
 
             {offlineQueue.length === 0 ? (
-               <View className="bg-amber-50/50 p-6 rounded-[20px] border border-amber-200 border-dashed items-center justify-center">
-                 <Inbox size={32} color="#fcd34d" />
-                 <Text className="text-amber-800 font-bold mt-3">No pending orders</Text>
-                 <Text className="text-amber-600 text-xs text-center mt-1">All orders are safely synced to the server.</Text>
-               </View>
+              <View className="bg-amber-50/50 p-6 rounded-[20px] border border-amber-200 border-dashed items-center justify-center">
+                <Inbox size={32} color="#fcd34d" />
+                <Text className="text-amber-800 font-bold mt-3">No pending orders</Text>
+                <Text className="text-amber-600 text-xs text-center mt-1">All orders are safely synced to the server.</Text>
+              </View>
             ) : (
               offlineQueue.map((order) => (
                 <View key={order.id} className="bg-amber-50 p-4 rounded-[20px] border border-amber-200 shadow-sm mb-3">
@@ -213,9 +211,9 @@ export default function OrdersScreen() {
                     </View>
                     <Text className="text-lg font-black text-amber-900">Rs. {order.totalAmount}</Text>
                   </View>
-  
+
                   <View className="h-[1px] w-full bg-amber-200/50 my-2" />
-  
+
                   <View className="flex-row items-center justify-between mt-1">
                     <View className="flex-row items-center gap-3">
                       <View className="flex-row items-center gap-1">
@@ -227,7 +225,7 @@ export default function OrdersScreen() {
                         <Text className="text-xs font-bold text-amber-700">{order.time}</Text>
                       </View>
                     </View>
-  
+
                     <TouchableOpacity className="flex-row items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-amber-200 active:bg-amber-100"
                       onPress={() => removeOrderFromQueue(order.id)}
                     >
@@ -250,11 +248,11 @@ export default function OrdersScreen() {
             </View>
 
             {syncedOrders.length === 0 ? (
-               <View className="bg-slate-50 p-6 rounded-[20px] border border-slate-200 border-dashed items-center justify-center">
-                 <Inbox size={32} color="#cbd5e1" />
-                 <Text className="text-slate-600 font-bold mt-3">No orders found</Text>
-                 <Text className="text-slate-400 text-xs text-center mt-1">You have not completed any orders for this date yet.</Text>
-               </View>
+              <View className="bg-slate-50 p-6 rounded-[20px] border border-slate-200 border-dashed items-center justify-center">
+                <Inbox size={32} color="#cbd5e1" />
+                <Text className="text-slate-600 font-bold mt-3">No orders found</Text>
+                <Text className="text-slate-400 text-xs text-center mt-1">You have not completed any orders for this date yet.</Text>
+              </View>
             ) : (
               syncedOrders.map((order) => (
                 <View key={order.id} className="bg-white p-4 rounded-[20px] border border-slate-200 shadow-sm mb-3">
@@ -268,9 +266,9 @@ export default function OrdersScreen() {
                     </View>
                     <Text className="text-lg font-black text-slate-900">Rs. {order.totalAmount}</Text>
                   </View>
-  
+
                   <View className="h-[1px] w-full bg-slate-100 my-2" />
-  
+
                   <View className="flex-row items-center gap-3 mt-1">
                     <View className="flex-row items-center gap-1">
                       <Package size={12} color="#64748b" />

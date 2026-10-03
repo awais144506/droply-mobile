@@ -30,6 +30,8 @@ export default function NewOrderScreen() {
         visible: false, title: "", message: "", onConfirm: () => { },
     });
 
+    const [idempotencyKey] = useState(() => `mob-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+
 
     const methods = useForm<NewOrderFormData>({
         resolver: yupResolver(newOrderSchema),
@@ -48,6 +50,7 @@ export default function NewOrderScreen() {
     const { handleSubmit, formState: { isSubmitting } } = methods;
 
     const onSubmit = (formData: NewOrderFormData) => {
+        console.log("🔥 UI GENERATED KEY:", idempotencyKey);
         // 1. Calculate the totals
         const totalItems = formData.items.reduce((sum, item) => sum + item.quantity, 0);
         const subtotal = formData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -60,6 +63,7 @@ export default function NewOrderScreen() {
             branchId: branchId, // Pulled from Clerk metadata at the top of your screen
             saleType: 'DELIVERY', // Riders default to delivery
             customerId: formData.customerId,
+            idempotencyKey: idempotencyKey,
             scheduledDate: formData.scheduleDate ? new Date(formData.scheduleDate).toISOString() : undefined,
             discount: formData.discountAmount || 0,
             deliveryCharges: formData.deliveryCharges || 0,
@@ -78,7 +82,7 @@ export default function NewOrderScreen() {
 
         // 4. Construct the LocalOrder object
         const newOfflineOrder: LocalOrder = {
-            id: `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            id: idempotencyKey,
             customerName: customer?.name || "Unknown Customer",
             zoneName: zone?.name || "Unknown Zone",
             totalAmount: finalTotal,

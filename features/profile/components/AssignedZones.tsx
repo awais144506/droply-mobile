@@ -14,13 +14,15 @@ export const AssignedZones = ({ isZonesLoading, assignedZones }: Props) => {
     return (
         <View>
             <View className="bg-white rounded-2xl border border-slate-200 p-4 mb-5 shadow-2xs">
-                <View className="flex-row items-center justify-between pb-3 border-b border-slate-100 mb-3">
-                    <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <View className="flex-row items-center justify-between pb-4 border-b border-slate-100 mb-2">
+                    <Text className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
                         Assigned Zones
                     </Text>
-                    <View className="flex-row items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md">
-                        <Lock size={10} color="#64748b" />
-                        <Text className="text-[10px] font-medium text-slate-500">Managed by Plant</Text>
+                    <View className="flex-row items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                        <Lock size={12} color="#94a3b8" />
+                        <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            Managed By Branch
+                        </Text>
                     </View>
                 </View>
 

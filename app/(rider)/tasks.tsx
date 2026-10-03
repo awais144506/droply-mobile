@@ -53,8 +53,8 @@ export default function TasksScreen() {
         {/* Pending Tasks */}
         {pendingTasks.length > 0 && (
           <View className="mb-4">
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              To-Do ({pendingTasks.length})
+            <Text className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
+              To-Do : <Text className="text-amber-600">({pendingTasks.length})</Text>
             </Text>
             {pendingTasks.map((task) => (
               <TaskCard key={task.id} task={task} onToggle={handleToggleTask} />
@@ -73,8 +73,8 @@ export default function TasksScreen() {
         {/* Completed Tasks */}
         {completedTasks.length > 0 && (
           <View className="mb-6">
-            <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">
-              Completed ({completedTasks.length})
+            <Text className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 mt-2">
+              Completed : <Text className="text-emerald-600">({completedTasks.length})</Text>
             </Text>
             {completedTasks.map((task) => (
               <TaskCard key={task.id} task={task} onToggle={handleToggleTask} />

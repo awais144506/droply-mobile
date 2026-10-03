@@ -81,7 +81,6 @@ export const useOfflineOrderStore = create<OfflineOrderState>()(
       storage: createJSONStorage(() => zustandStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // 🔥 FIX: Push the cleanup to the next JS tick so it doesn't crash the React render cycle
           setTimeout(() => {
             state.purgeOldSyncedOrders();
           }, 100);

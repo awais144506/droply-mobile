@@ -94,7 +94,7 @@ export const ProfileDetails = () => {
         <View className="mb-4 mt-2">
             {/* Main Info Card */}
             <View className="bg-white rounded-[32px] p-6 items-center shadow-sm mb-4">
-                
+
                 {/* Standard Avatar Layout (No Absolute Floating) */}
                 <View className="relative mb-4">
                     <View className="h-24 w-24 rounded-full bg-slate-50 border-4 border-slate-50 overflow-hidden items-center justify-center">

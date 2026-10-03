@@ -3,18 +3,14 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from '@clerk/clerk-expo';
-import { useOfflineOrderStore } from '@/store/seOfflineOrderStore'; // Check filename spelling!
+import { useOfflineOrderStore } from '@/store/seOfflineOrderStore';
+import { logKeys } from '@/features/wallet/api/log-keys';
 
 export const useOrderSync = () => {
     const { offlineQueue, markOrderAsSynced } = useOfflineOrderStore();
     const queryClient = useQueryClient();
     const { getToken } = useAuth();
-    
-    // 🔥 FIX 1: Use a Ref instead of State. This stops React from re-rendering
-    // and triggering an infinite loop when a sync fails!
     const isSyncing = useRef(false);
-
-    // 1. The TanStack Mutation
     const createOrderMutation = useMutation({
         mutationFn: async (orderPayload: any) => {
             const token = await getToken();
@@ -53,6 +49,7 @@ export const useOrderSync = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['riderOrderData'] });
+            queryClient.invalidateQueries({ queryKey: logKeys.all });
         },
     });
 
@@ -96,7 +93,7 @@ export const useOrderSync = () => {
         }
 
         return () => unsubscribe();
-        
+
         // 🔥 FIX 2: We ONLY want this effect to fire when the queue length changes.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [offlineQueue.length]);

@@ -1,12 +1,14 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApiClient } from "@/lib/api-client"; // Adjust path if necessary
 import { ordersService, CreateCustomerRequestPayload } from "./orders.service";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
+import { logKeys } from "@/features/wallet/api/log-keys";
 
-export const useRequestNewCustomer = () => {
+export const useRequestNewCustomer = (branchId: string) => {
     const api = useApiClient();
     const router = useRouter();
+    const query = useQueryClient();
 
     return useMutation({
         mutationFn: (payload: CreateCustomerRequestPayload) =>
@@ -20,6 +22,7 @@ export const useRequestNewCustomer = () => {
                 visibilityTime: 3000,
             });
             router.replace('/(rider)/orders');
+            query.invalidateQueries({ queryKey: logKeys.list(branchId) })
         },
         onError: (error: any) => {
             Toast.show({
