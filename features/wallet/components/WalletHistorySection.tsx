@@ -9,7 +9,7 @@ import {
   Fuel,
   Wrench,
   FileText,
-  UserPlus,
+  UserCheck,
   Trash2,
   ShoppingCart,
   CircleDashed
@@ -65,7 +65,7 @@ export default function WalletHistorySection({ logs, isLoading }: Props) {
       .join(' ');
   };
 
-  const getLogStyle = (type: LogType) => {
+const getLogStyle = (type: LogType) => {
     switch (type) {
       case 'DELIVERED': 
         return { icon: CheckCircle2, color: '#059669', bg: 'bg-emerald-50', border: 'border-emerald-100' };
@@ -78,11 +78,11 @@ export default function WalletHistorySection({ logs, isLoading }: Props) {
       case 'ASSET_RECOVERY': 
         return { icon: Package, color: '#d97706', bg: 'bg-amber-50', border: 'border-amber-100' };
       case 'ORDER_CREATED': 
-        return { icon: ShoppingCart, color: '#7c3aed', bg: 'bg-indigo-50', border: 'border-indigo-100' };
+        return { icon: ShoppingCart, color: '#059669', bg: 'bg-emerald-50', border: 'border-emerald-100' }; // 🔥 Changed to green
       case 'CUSTOMER': 
-        return { icon: UserPlus, color: '#0d9488', bg: 'bg-teal-50', border: 'border-teal-100' };
+        return { icon: UserCheck, color: '#0d9488', bg: 'bg-teal-50', border: 'border-teal-100' }; // 🔥 Refreshed customer icon
       case 'PETROL': 
-        return { icon: Fuel, color: '#ea580c', bg: 'bg-orange-50', border: 'border-orange-100' };
+        return { icon: Fuel, color: '#ea580c', bg: 'bg-orange-50', border: 'border-amber-100' };
       case 'MAINTENANCE': 
         return { icon: Wrench, color: '#4f46e5', bg: 'bg-indigo-50', border: 'border-indigo-100' };
       default: 

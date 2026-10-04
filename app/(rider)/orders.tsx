@@ -143,7 +143,7 @@ export default function OrdersScreen() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onDelete={() => handleDeleteRequest(order.id)} // 🔥 Trigger custom alert
+                onDelete={() => handleDeleteRequest(order.id)}
               />
             ))}
           </View>

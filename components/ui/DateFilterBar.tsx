@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { CalendarDays } from 'lucide-react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { CustomDatePickerModal } from './CustomDatePickerModal';
 
 export type DateFilterType = 'today' | 'tomorrow' | 'custom';
 
@@ -18,57 +18,101 @@ export function DateFilterBar({
   onFilterChange,
   hideTomorrow = false
 }: DateFilterBarProps) {
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      onFilterChange('custom', selectedDate);
-    }
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <View className="mb-4 mt-2">
+    <View style={{ marginBottom: 16, marginTop: 8 }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 12, paddingHorizontal: 4 }}
       >
+        {/* Today Button */}
         <TouchableOpacity
           onPress={() => onFilterChange('today')}
-          className={`px-6 py-2.5 rounded-full border ${activeFilter === 'today' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}`}
+          style={{
+            paddingHorizontal: 24,
+            paddingVertical: 10,
+            borderRadius: 9999,
+            borderWidth: 1,
+            borderColor: activeFilter === 'today' ? '#0f172a' : '#e2e8f0',
+            backgroundColor: activeFilter === 'today' ? '#0f172a' : '#ffffff',
+            ...(activeFilter === 'today' && {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 3.84,
+              elevation: 5,
+            }),
+          }}
         >
-          <Text className={`text-sm font-bold ${activeFilter === 'today' ? 'text-white' : 'text-slate-600'}`}>Today</Text>
+          <Text style={{ fontSize: 14, fontWeight: 'bold', color: activeFilter === 'today' ? '#ffffff' : '#475569' }}>
+            Today
+          </Text>
         </TouchableOpacity>
 
+        {/* Tomorrow Button */}
         {!hideTomorrow && (
           <TouchableOpacity
             onPress={() => onFilterChange('tomorrow')}
-            className={`px-6 py-2.5 rounded-full border ${activeFilter === 'tomorrow' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}`}
+            style={{
+              paddingHorizontal: 24,
+              paddingVertical: 10,
+              borderRadius: 9999,
+              borderWidth: 1,
+              borderColor: activeFilter === 'tomorrow' ? '#0f172a' : '#e2e8f0',
+              backgroundColor: activeFilter === 'tomorrow' ? '#0f172a' : '#ffffff',
+              ...(activeFilter === 'tomorrow' && {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3.84,
+                elevation: 5,
+              }),
+            }}
           >
-            <Text className={`text-sm font-bold ${activeFilter === 'tomorrow' ? 'text-white' : 'text-slate-600'}`}>Tomorrow</Text>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', color: activeFilter === 'tomorrow' ? '#ffffff' : '#475569' }}>
+              Tomorrow
+            </Text>
           </TouchableOpacity>
         )}
 
+        {/* Custom Date Button */}
         <TouchableOpacity
-          onPress={() => setShowDatePicker(true)}
-          className={`px-6 py-2.5 rounded-full border flex-row items-center gap-2 ${activeFilter === 'custom' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}`}
+          onPress={() => setIsModalOpen(true)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            paddingHorizontal: 24,
+            paddingVertical: 10,
+            borderRadius: 9999,
+            borderWidth: 1,
+            borderColor: activeFilter === 'custom' ? '#0f172a' : '#e2e8f0',
+            backgroundColor: activeFilter === 'custom' ? '#0f172a' : '#ffffff',
+            ...(activeFilter === 'custom' && {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 3.84,
+              elevation: 5,
+            }),
+          }}
         >
           <CalendarDays size={14} color={activeFilter === 'custom' ? '#ffffff' : '#475569'} />
-          <Text className={`text-sm font-bold ${activeFilter === 'custom' ? 'text-white' : 'text-slate-600'}`}>
+          <Text style={{ fontSize: 14, fontWeight: 'bold', color: activeFilter === 'custom' ? '#ffffff' : '#475569' }}>
             {activeFilter === 'custom' ? customDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Pick Date'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={customDate}
-          mode="date"
-          display="default"
-          onValueChange={handleDateChange}
-        />
-      )}
+      {/* Pure JS Modal Calendar */}
+      <CustomDatePickerModal
+        visible={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedDate={customDate}
+        onSelectDate={(date) => onFilterChange('custom', date)}
+      />
     </View>
   );
 }

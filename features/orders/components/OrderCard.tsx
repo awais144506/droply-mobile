@@ -39,7 +39,7 @@ export const OrderCard = ({ order, onDelete }: OrderCardProps) => {
                         <Text className="text-sm font-bold text-indigo-700" numberOfLines={1}>{customerName}</Text>
                     </View>
 
-                    <View className={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-full border ${isPending ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <View className={`flex-row items-center gap-1.5 px-2 py-0.5 rounded-lg ${isPending ? 'bg-amber-100 border-amber-200' : 'bg-emerald-100 border-emerald-200'}`}>
                         {isPending ? <CircleDashed size={10} color="#d97706" /> : <CheckCircle2 size={10} color="#059669" />}
                         <Text className={`text-[9px] font-bold uppercase tracking-wider ${isPending ? 'text-amber-700' : 'text-emerald-700'}`}>
                             {order.status}

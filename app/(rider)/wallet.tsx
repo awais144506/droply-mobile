@@ -35,7 +35,7 @@ export default function WalletScreen() {
     }
   };
 
-  const handleAddExpense = (expenseData: { category: string; amount: number; odometer: number }) => {
+  const handleAddExpense = (expenseData: { category: string; amount: number; odometerReading: number }) => {
     console.log("Submitting Expense:", expenseData);
     setExpenseModalOpen(false);
   };
