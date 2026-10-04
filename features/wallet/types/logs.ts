@@ -1,4 +1,7 @@
-export type LogType = "CANCELLED" | "DELIVERED" | "PAYMENT_RECOVERY" | "ASSET_RECOVERY" | "ORDER_CREATED" | "PETROL" | "MAINTENANCE" | "OTHER";
+export type LogType = "CANCELLED" | "DELETED"
+    | "DELIVERED" | "PAYMENT_RECOVERY"
+    | "ASSET_RECOVERY" | "ORDER_CREATED" | "CUSTOMER"
+    | "PETROL" | "MAINTENANCE" | "OTHER";
 
 export interface RiderLogs {
     id: string;

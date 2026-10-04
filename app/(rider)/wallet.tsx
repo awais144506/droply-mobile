@@ -3,70 +3,88 @@ import { View, ScrollView, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Wallet, Receipt } from "lucide-react-native";
 import { format } from "date-fns";
-import DateFilter from "@/features/wallet/components/DateFilter";
+
 import WalletSummaryCard from "@/features/wallet/components/WalletSummaryCard";
 import WalletHistorySection from "@/features/wallet/components/WalletHistorySection";
-import AddExpenseModal from "@/components/wallet/AddExpenseModal";
+import AddExpenseModal from "@/features/wallet/components/AddExpenseModal";
 import { useRiderLogs } from "@/features/wallet/api/use-logs";
 import { useRole } from "@/lib/use-role";
+import Error from "../error";
+import Loading from "../loading";
+import { DateFilterBar, DateFilterType } from "@/components/ui/DateFilterBar";
 
 export default function WalletScreen() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isExpenseModalOpen, setExpenseModalOpen] = useState(false);
-  const dateString = format(selectedDate, 'yyyy-MM-dd');
   const { branchId } = useRole();
 
-  const { data: logs = [], isLoading, error } = useRiderLogs(branchId, dateString);
+  const [activeFilter, setActiveFilter] = useState<DateFilterType>('today');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isExpenseModalOpen, setExpenseModalOpen] = useState(false);
 
-  // ADD THIS LINE:
-  console.log("TANSTACK ERROR:", error?.message || error);
+  // 2. Format the date for the API
+  const dateString = format(selectedDate, 'yyyy-MM-dd');
+  const { data: logs = [], isLoading, isError, error } = useRiderLogs(branchId, dateString);
 
-
-  // MOCK DATA for now (Later, you will calculate these dynamically from 'logs')
-  const isHandedOver = false;
-  const netDeposit = 4500;
   const totalCashIn = 5000;
-  const totalExpenses = 500;
 
-  const handleAddExpense = (expenseData: any) => {
+  const handleFilterChange = (filter: DateFilterType, date?: Date) => {
+    setActiveFilter(filter);
+    if (filter === 'today') {
+      setSelectedDate(new Date());
+    } else if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const handleAddExpense = (expenseData: { category: string; amount: number; odometer: number }) => {
+    console.log("Submitting Expense:", expenseData);
     setExpenseModalOpen(false);
   };
 
+  if (isLoading) return <Loading text="Loading Logs..." />
+  if (isError) return <Error text={error.message} />
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
-      {/* ... Header omitted for brevity ... */}
-
+      <View className="px-5 py-4 bg-white border-b border-slate-200 flex-row items-center gap-3 z-10">
+        <View className="h-10 w-10 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+          <Wallet size={20} color="#0284c7" />
+        </View>
+        <View>
+          <Text className="text-lg font-extrabold text-slate-900">Wallet & Logs</Text>
+          <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Manage your logs</Text>
+        </View>
+      </View>
       <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-        <DateFilter
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
-          onOpenPicker={() => { /* Open Picker */ }}
+        <DateFilterBar
+          activeFilter={activeFilter}
+          customDate={selectedDate}
+          onFilterChange={handleFilterChange}
+          hideTomorrow={true}
         />
-
         <WalletSummaryCard
           date={selectedDate}
-          netDeposit={netDeposit}
           totalCashIn={totalCashIn}
-          totalExpenses={totalExpenses}
         />
+        <View className="flex-row gap-3 mb-6">
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setExpenseModalOpen(true)}
+            className="flex-1 bg-white border border-slate-200 rounded-xl p-3 flex-row items-center justify-center gap-2 shadow-sm"
+          >
+            <Receipt size={16} color="#475569" />
+            <Text className="text-xs font-bold text-slate-700">Enter Expense</Text>
+          </TouchableOpacity>
+        </View>
 
-        {!isHandedOver && (
-          <View className="flex-row gap-3 mb-6">
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setExpenseModalOpen(true)}
-              className="flex-1 bg-white border border-slate-200 rounded-xl p-3 flex-row items-center justify-center gap-2 shadow-sm"
-            >
-              <Receipt size={16} color="#475569" />
-              <Text className="text-xs font-bold text-slate-700">Enter Expense</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* 2. Pass the fetched data down to the component */}
         <WalletHistorySection logs={logs} isLoading={isLoading} />
 
       </ScrollView>
+
+      <AddExpenseModal
+        visible={isExpenseModalOpen}
+        onClose={() => setExpenseModalOpen(false)}
+        onSubmit={handleAddExpense}
+      />
     </SafeAreaView>
   );
 }

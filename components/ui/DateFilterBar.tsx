@@ -1,4 +1,3 @@
-// src/components/ui/DateFilterBar.tsx
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { CalendarDays } from 'lucide-react-native';
@@ -10,9 +9,15 @@ interface DateFilterBarProps {
   activeFilter: DateFilterType;
   customDate: Date;
   onFilterChange: (filter: DateFilterType, date?: Date) => void;
+  hideTomorrow?: boolean;
 }
 
-export function DateFilterBar({ activeFilter, customDate, onFilterChange }: DateFilterBarProps) {
+export function DateFilterBar({
+  activeFilter,
+  customDate,
+  onFilterChange,
+  hideTomorrow = false
+}: DateFilterBarProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -23,7 +28,7 @@ export function DateFilterBar({ activeFilter, customDate, onFilterChange }: Date
   };
 
   return (
-    <View className="mb-4">
+    <View className="mb-4 mt-2">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -31,21 +36,23 @@ export function DateFilterBar({ activeFilter, customDate, onFilterChange }: Date
       >
         <TouchableOpacity
           onPress={() => onFilterChange('today')}
-          className={`px-6 py-2 rounded-full border ${activeFilter === 'today' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
+          className={`px-6 py-2.5 rounded-full border ${activeFilter === 'today' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}`}
         >
           <Text className={`text-sm font-bold ${activeFilter === 'today' ? 'text-white' : 'text-slate-600'}`}>Today</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => onFilterChange('tomorrow')}
-          className={`px-6 py-2 rounded-full border ${activeFilter === 'tomorrow' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
-        >
-          <Text className={`text-sm font-bold ${activeFilter === 'tomorrow' ? 'text-white' : 'text-slate-600'}`}>Tomorrow</Text>
-        </TouchableOpacity>
+        {!hideTomorrow && (
+          <TouchableOpacity
+            onPress={() => onFilterChange('tomorrow')}
+            className={`px-6 py-2.5 rounded-full border ${activeFilter === 'tomorrow' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}`}
+          >
+            <Text className={`text-sm font-bold ${activeFilter === 'tomorrow' ? 'text-white' : 'text-slate-600'}`}>Tomorrow</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           onPress={() => setShowDatePicker(true)}
-          className={`px-6 py-2 rounded-full border flex-row items-center gap-2 ${activeFilter === 'custom' ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
+          className={`px-6 py-2.5 rounded-full border flex-row items-center gap-2 ${activeFilter === 'custom' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}`}
         >
           <CalendarDays size={14} color={activeFilter === 'custom' ? '#ffffff' : '#475569'} />
           <Text className={`text-sm font-bold ${activeFilter === 'custom' ? 'text-white' : 'text-slate-600'}`}>

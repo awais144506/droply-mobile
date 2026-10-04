@@ -1,49 +1,44 @@
-// src/components/wallet/WalletSummaryCard.tsx
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Calendar, Clock } from 'lucide-react-native';
+import { Wallet, CalendarDays } from 'lucide-react-native';
 import { format } from 'date-fns';
 
 interface SummaryCardProps {
   date: Date;
-  netDeposit: number;
   totalCashIn: number;
-  totalExpenses: number;
 }
 
-export default function WalletSummaryCard({ date, netDeposit, totalCashIn, totalExpenses }: SummaryCardProps) {
+export default function WalletSummaryCard({ date, totalCashIn }: SummaryCardProps) {
   return (
-    <View className="bg-sky-600 rounded-3xl p-5 mb-4 shadow-xl border border-sky-500/30">
-      <View className="flex-row items-center justify-between bg-sky-700/50 px-3 py-1.5 rounded-xl mb-4 border border-sky-500/40">
-        <View className="flex-row items-center gap-1.5">
-          <Calendar size={13} color="#bae6fd" />
-          <Text className="text-[11px] font-bold text-sky-100">{format(date, 'MMM dd, yyyy')}</Text>
+    <View className="bg-slate-900 rounded-xl p-6 mb-6 shadow-xl relative overflow-hidden">
+
+      {/* Top Row: Date Pill & Icon */}
+      <View className="flex-row justify-between items-center mb-8 z-10">
+        <View className="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-300 flex-row items-center gap-2">
+          <CalendarDays size={14} color="#94a3b8" />
+          <Text className="text-slate-300 text-xs font-bold tracking-wide">
+            {format(date, 'MMMM dd, yyyy')}
+          </Text>
         </View>
-        <View className="flex-row items-center gap-1.5">
-          <Clock size={13} color="#bae6fd" />
-          <Text className="text-[11px] font-bold text-sky-100 font-mono">
-            {format(new Date(), 'hh:mm a')}
+
+        <View className="h-10 w-10 bg-slate-800/80 rounded-full items-center justify-center border border-slate-700/50">
+          <Wallet size={18} color="#38bdf8" />
+        </View>
+      </View>
+
+      {/* Main Focus: Total Received */}
+      <View className="z-10">
+        <Text className="text-slate-400 text-[11px] font-extrabold uppercase tracking-widest mb-1">
+          Total Payment Received
+        </Text>
+
+        <View className="flex-row items-baseline">
+          <Text className="text-slate-300 text-2xl font-bold mr-1.5">
+            Rs: ({totalCashIn.toLocaleString()})
           </Text>
         </View>
       </View>
 
-      <Text className="text-sky-100 text-xs font-semibold uppercase tracking-wider mb-1">
-        Net Cash to Deposit
-      </Text>
-      <Text className="text-4xl font-extrabold text-white mb-4 tracking-tight">
-        Rs {netDeposit.toLocaleString()}
-      </Text>
-
-      <View className="flex-row justify-between border-t border-sky-500/50 pt-4">
-        <View>
-          <Text className="text-sky-200 text-[10px] uppercase font-bold tracking-wide">Total Collected</Text>
-          <Text className="text-white text-base font-bold mt-0.5">Rs {totalCashIn.toLocaleString()}</Text>
-        </View>
-        <View className="items-end">
-          <Text className="text-sky-200 text-[10px] uppercase font-bold tracking-wide text-right">Petty Expenses</Text>
-          <Text className="text-rose-200 text-base font-bold mt-0.5 text-right">- Rs {totalExpenses.toLocaleString()}</Text>
-        </View>
-      </View>
     </View>
   );
 }
