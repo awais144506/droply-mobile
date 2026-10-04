@@ -8,6 +8,7 @@ import Toast from 'react-native-toast-message';
 import { QueryProvider } from "@/providers/query-provider";
 import { useRole } from "@/lib/use-role";
 import SuspendedScreen from "@/components/auth/SuspendedScreen";
+import { customToastConfig } from "@/lib/toast-config";
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -34,7 +35,7 @@ export default function RootLayout() {
             <GlobalAuthMiddleware>
               <Slot />
             </GlobalAuthMiddleware>
-            <Toast />
+            <Toast config={customToastConfig} />
           </ClerkLoaded>
         </QueryProvider>
       </ClerkProvider>

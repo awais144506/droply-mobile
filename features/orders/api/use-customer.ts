@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApiClient } from "@/lib/api-client"; // Adjust path if necessary
-import { ordersService, CreateCustomerRequestPayload } from "./orders.service";
+import { customerService } from "./customer.service";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
 import { logKeys } from "@/features/wallet/api/log-keys";
+import { CreateCustomerRequestPayload } from "../types/customer";
 
 export const useRequestNewCustomer = (branchId: string) => {
     const api = useApiClient();
@@ -12,8 +13,8 @@ export const useRequestNewCustomer = (branchId: string) => {
 
     return useMutation({
         mutationFn: (payload: CreateCustomerRequestPayload) =>
-            ordersService.requestNewCustomer(api, payload),
-        onSuccess: (data) => {
+            customerService.requestNewCustomer(api, payload),
+        onSuccess: () => {
             Toast.show({
                 type: 'success',
                 text1: 'Customer Details Sent',

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { Receipt, Tag, Truck, Banknote } from "lucide-react-native";
-import { NewOrderFormData } from "../schema/order-schema";
+import { NewOrderFormData } from "../../schema/order-schema";
 
 export default function OrderFinancialsCard({ data }: { data: any }) {
   const { control } = useFormContext<NewOrderFormData>();

@@ -4,17 +4,14 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { MapPin, AlertCircle, RefreshCcw } from "lucide-react-native";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import { NewOrderFormData } from "../schema/order-schema";
+import { NewOrderFormData } from "../../schema/order-schema";
 
 export default function OrderCustomerCard({ data, isLoading }: { data: any, isLoading: boolean }) {
     const { control, setValue } = useFormContext<NewOrderFormData>();
-
     const selectedZoneId = useWatch({ control, name: "zoneId" });
     const selectedCustomerId = useWatch({ control, name: "customerId" });
-
     const zoneOptions = data?.zoneOptions || [];
     const customerOptions = data?.customerOptions || [];
-
     // Filter customers by selected zone
     const availableCustomers = useMemo(() => {
         if (!selectedZoneId) return [];

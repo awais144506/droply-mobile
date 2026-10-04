@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { useFormContext, useWatch } from "react-hook-form";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { CalendarDays } from "lucide-react-native";
-import { NewOrderFormData } from "../schema/order-schema";
+import { NewOrderFormData } from "../../schema/order-schema";
 
 export default function OrderScheduleCard() {
   const { setValue, control } = useFormContext<NewOrderFormData>();
@@ -25,7 +25,7 @@ export default function OrderScheduleCard() {
     if (Platform.OS === "android") {
       setShowDatePicker(false); // Android requires manual closing of the modal
     }
-    
+
     if (selectedDate) {
       setValue("scheduleDate", selectedDate, { shouldValidate: true });
       setValue("scheduleMode", "LATER", { shouldValidate: true });
@@ -65,9 +65,8 @@ export default function OrderScheduleCard() {
       <View className="flex-row gap-3">
         <TouchableOpacity
           onPress={() => setMode("TODAY")}
-          className={`flex-1 py-3 rounded-xl border items-center justify-center ${
-            scheduleMode === "TODAY" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
-          }`}
+          className={`flex-1 py-3 rounded-xl border items-center justify-center ${scheduleMode === "TODAY" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
+            }`}
         >
           <Text className={`text-xs font-bold ${scheduleMode === "TODAY" ? "text-sky-700" : "text-slate-600"}`}>
             Today
@@ -76,9 +75,8 @@ export default function OrderScheduleCard() {
 
         <TouchableOpacity
           onPress={() => setMode("TOMORROW")}
-          className={`flex-1 py-3 rounded-xl border items-center justify-center ${
-            scheduleMode === "TOMORROW" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
-          }`}
+          className={`flex-1 py-3 rounded-xl border items-center justify-center ${scheduleMode === "TOMORROW" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
+            }`}
         >
           <Text className={`text-xs font-bold ${scheduleMode === "TOMORROW" ? "text-sky-700" : "text-slate-600"}`}>
             Tomorrow
@@ -87,13 +85,12 @@ export default function OrderScheduleCard() {
 
         <TouchableOpacity
           onPress={() => setShowDatePicker(true)}
-          className={`flex-1 py-3 rounded-xl border items-center justify-center ${
-            scheduleMode === "LATER" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
-          }`}
+          className={`flex-1 py-3 rounded-xl border items-center justify-center ${scheduleMode === "LATER" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
+            }`}
         >
           <Text className={`text-xs font-bold ${scheduleMode === "LATER" ? "text-sky-700" : "text-slate-600"}`}>
-            {scheduleMode === "LATER" 
-              ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) 
+            {scheduleMode === "LATER"
+              ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
               : "Pick Date"}
           </Text>
         </TouchableOpacity>

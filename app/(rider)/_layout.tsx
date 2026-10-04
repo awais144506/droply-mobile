@@ -5,22 +5,17 @@ import { Tabs, usePathname } from "expo-router";
 import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
 import { useApiClient } from "@/lib/api-client";
 import Toast from "react-native-toast-message";
-import { useOrderSync } from "@/features/orders/api/use-order-sync";
 
 export default function RiderLayout() {
   const api = useApiClient();
   const appState = useRef(AppState.currentState);
   const pathname = usePathname();
-  useOrderSync();
   const isOrdersActive = pathname.includes('/orders') || pathname.includes('/sale');
 
   useEffect(() => {
     const updatePresence = async (status: 'ONLINE' | 'OFFLINE', showToast: boolean = false) => {
       try {
-        console.log(`Attempting to send ${status} to server...`);
         api.post('/tracking/presence', { status })
-          .then(() => console.log(`SUCCESS: Marked ${status}`))
-          .catch(err => console.log(`FAILED to mark ${status}:`, err.message));
         if (status === 'ONLINE' && showToast) {
           Toast.show({
             type: 'success',
@@ -40,13 +35,9 @@ export default function RiderLayout() {
 
     // 2. App State Changes
     const subscription = AppState.addEventListener("change", (nextAppState) => {
-      console.log(`[AppState] Changed from ${appState.current} to ${nextAppState}`);
-
       if (appState.current === "active" && (nextAppState === "background" || nextAppState === "inactive")) {
-        console.log("🔥 App minimized! Firing OFFLINE request...");
         updatePresence('OFFLINE', false);
       } else if ((appState.current === "background" || appState.current === "inactive") && nextAppState === "active") {
-        console.log("🔥 App opened! Firing ONLINE request...");
         updatePresence('ONLINE', true); // Show Toast when they come back
       }
 
@@ -54,7 +45,6 @@ export default function RiderLayout() {
     });
     const heartbeatInterval = setInterval(() => {
       if (appState.current === "active") {
-        console.log("💓 Heartbeat: App is still active, refreshing timestamp...");
         updatePresence('ONLINE', false);
       }
     }, 2 * 60 * 1000);

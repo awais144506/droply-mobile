@@ -1,18 +1,21 @@
 import { AxiosInstance } from "axios";
-
-export interface CreateCustomerRequestPayload {
-  branchId: string;
-  name: string;
-  phone: string;
-  address: string;
-}
+import { OrderDataResponse } from "../types/order";
 
 export const ordersService = {
-  requestNewCustomer: async (
-    api: AxiosInstance,
-    payload: CreateCustomerRequestPayload
-  ) => {
-    const response = await api.post("/rider/request", payload);
-    return response.data;
-  },
+    getOrderData: async (api: AxiosInstance, branchId: string): Promise<OrderDataResponse> => {
+        const response = await api.get(`/rider/${branchId}`);
+        return response.data;
+    },
+    createNewOrder: async (api: AxiosInstance, payload: any) => {
+        const response = await api.post(`/orders`, payload);
+        return response.data;
+    },
+    getOrdersList: async (api: AxiosInstance, dateString: string): Promise<any> => {
+        const response = await api.get(`/rider/orders?date=${dateString}`);
+        return response.data;
+    },
+    deleteOrder: async (api: AxiosInstance, orderId: string): Promise<any> => {
+        const response = await api.delete(`/orders/${orderId}`);
+        return response.data;
+    },
 };

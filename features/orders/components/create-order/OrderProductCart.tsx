@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, Keyboard } from "react-native"
 import { useFormContext, useWatch } from "react-hook-form";
 import { PackageSearch, PlusCircle, Trash2, AlertCircle, ShoppingCart } from "lucide-react-native";
 import SearchableSelect from "@/components/ui/SearchableSelect";
-import { NewOrderFormData } from "../schema/order-schema";
+import { NewOrderFormData } from "../../schema/order-schema";
 import { useOfflineOrderStore } from "@/store/seOfflineOrderStore";
 
 export default function OrderProductCart({ data }: { data: any }) {

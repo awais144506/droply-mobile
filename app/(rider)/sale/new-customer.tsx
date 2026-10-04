@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
+import { customerSchema, CustomerFormData } from "@/features/orders/schema/customer-schema";
 import { ArrowLeft, User, UserPlus, Phone, Building2, Send } from "lucide-react-native";
 import PhoneInput from "react-native-phone-number-input";
 import { useRequestNewCustomer } from "@/features/orders/api/use-customer";
@@ -20,17 +20,7 @@ import { useRole } from "@/lib/use-role";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import Loading from "@/app/loading";
 
-// 1. Define the Yup validation schema
-const schema = yup.object().shape({
-  name: yup.string().required("Customer name is required"),
-  phone: yup
-    .string()
-    .matches(/^\+[1-9]\d{1,14}$/, "Please enter a valid phone number")
-    .required("Phone number is required"),
-  address: yup.string().required("Address is required"),
-});
 
-type FormData = yup.InferType<typeof schema>;
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();
@@ -60,8 +50,8 @@ export default function AddNewCustomerScreen() {
     handleSubmit,
     reset,
     formState: { errors, isValid },
-  } = useForm<FormData>({
-    resolver: yupResolver(schema),
+  } = useForm<CustomerFormData>({
+    resolver: yupResolver(customerSchema),
     mode: "onChange",
     defaultValues: {
       name: "",
@@ -71,10 +61,10 @@ export default function AddNewCustomerScreen() {
   });
 
   // 3. Form Submit Handler using CustomAlert
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data: CustomerFormData) => {
     const payload = {
       ...data,
-      requestedById: userId,
+      requestedById: userId || "",
       branchId,
     };
 
@@ -99,9 +89,9 @@ export default function AddNewCustomerScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
 
         <View className="px-5 py-4 bg-white border-b border-slate-200 flex-row items-center gap-14 z-10">
-            <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} className="h-9 w-9 bg-slate-800 rounded-xl items-center justify-center">
-              <ArrowLeft size={18} color="#ffff" />
-            </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} className="h-9 w-9 bg-slate-800 rounded-xl items-center justify-center">
+            <ArrowLeft size={18} color="#ffff" />
+          </TouchableOpacity>
           <View className="flex-row items-center gap-3">
             <View className="h-10 w-10 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
               <UserPlus size={20} color="#0f172a" />

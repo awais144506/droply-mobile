@@ -1,129 +1,28 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApiClient } from "@/lib/api-client";
-import { AxiosInstance } from "axios";
+import { ordersService } from "./orders.service";
+import { TransformedOrderData, FlatAssignedCustomer } from "../types/order"
+import { orderKeys } from "./order-keys";
 
-// --- TYPES ---
-
-export interface CreateCustomerRequestPayload {
-  branchId: string;
-  name: string;
-  phone: string;
-  address: string;
-}
-
-export interface DropdownOption {
-  id: string;
-  label: string;
-}
-
-// Representing the backend BranchProduct model
-export interface BranchProduct {
-  id: string;
-  name: string;
-  salePrice: number;
-  currentStock: number;
-  category: string;
-  trackingType: string;
-  productCode: string;
-  isActive: boolean;
-  unitOfMeasure: string;
-}
-
-// Simplified Zone/Customer types based on your backend return
-export interface AssignedCustomer {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-  customerCredit: number;
-  returnablesLength: number;
-}
-
-export interface AssignedZone {
-  id: string;
-  name: string;
-  totalCustomers: number;
-  ledgerAmount: number;
-  itemsReturnable: number;
-  customers: AssignedCustomer[];
-}
-
-export interface RawOrderDataResponse {
-  zones: AssignedZone[];
-  branchProducts: BranchProduct[];
-}
-
-export type FlatAssignedCustomer = AssignedCustomer & {
-  zoneId: string;
-  zoneName: string;
-};
-
-export interface TransformedOrderData {
-  assignedZones: {
-    id: string;
-    name: string;
-    totalCustomers: number;
-  }[];
-  zones: AssignedZone[];
-  zoneOptions: DropdownOption[];
-  allCustomers: FlatAssignedCustomer[];
-  customerOptions: (DropdownOption & {
-    phone: string;
-    zoneId: string;
-    zoneName: string;
-    customerCredit: number;
-    returnablesLength: number;
-  })[];
-  totalCustomersCount: number;
-  branchProducts: BranchProduct[];
-  productOptions: (DropdownOption & {
-    price: number;
-    stock: number;
-    category: string;
-  })[];
-}
-
-// --- API SERVICE ---
-
-export const ordersService = {
-  requestNewCustomer: async (
-    api: AxiosInstance,
-    payload: CreateCustomerRequestPayload
-  ) => {
-    const response = await api.post("/rider/request", payload);
-    return response.data;
-  },
-
-  getRiderData: async (api: AxiosInstance, branchId: string): Promise<RawOrderDataResponse> => {
-    const response = await api.get(`/rider/${branchId}`);
-    return response.data;
-  },
-};
-
-// --- HOOK ---
-
-export const useRiderOrderData = (branchId: string | undefined) => {
+export const useRiderOrderData = (branchId: string) => {
   const api = useApiClient();
 
-  return useQuery<RawOrderDataResponse, Error, TransformedOrderData>({
-    queryKey: ["rider-order-data", branchId],
+  return useQuery({
+    queryKey: orderKeys.data(branchId),
     enabled: !!branchId,
-    queryFn: () => ordersService.getRiderData(api, branchId!),
-    staleTime: 1000 * 60 * 5,
+    queryFn: () => ordersService.getOrderData(api, branchId),
+    staleTime: 1000 * 60 * 2,
     select: (data): TransformedOrderData => {
       const { zones, branchProducts } = data;
+      console.log(branchProducts.map(p => p.currentStock))
 
-      // 1. Zone mapping
-      const assignedZones = zones.map((z) => ({
-        id: z.id,
-        name: z.name,
-        totalCustomers: z.customers?.length || 0,
-      }));
-
+      // 1. Zone Options for Select Picker
       const zoneOptions = zones.map((z) => ({
         id: z.id,
         label: z.name,
       }));
+
+      // 2. Flatten Customers & inject Zone Info
       const allCustomers: FlatAssignedCustomer[] = zones.flatMap((zone) =>
         (zone.customers || []).map((customer) => ({
           ...customer,
@@ -132,7 +31,8 @@ export const useRiderOrderData = (branchId: string | undefined) => {
         }))
       );
 
-      const customerOptions = allCustomers.map((cust) => ({
+      // 3. Customer Options for Select Picker
+      const customerOptions = allCustomers.filter(c => c.status === "ACTIVE").map((cust) => ({
         id: cust.id,
         label: `${cust.name} - (${cust.phone})`,
         phone: cust.phone,
@@ -142,31 +42,36 @@ export const useRiderOrderData = (branchId: string | undefined) => {
         returnablesLength: cust.returnablesLength,
       }));
 
-      // 4. Total customer count
-      const totalCustomersCount = zones.reduce(
-        (sum, zone) => sum + (zone.totalCustomers || zone.customers?.length || 0),
-        0
-      );
 
-      const productOptions = branchProducts.filter(p => p.category !== "RAW_MATERIAL").map((product) => ({
-        id: product.id,
-        label: `${product.name} - (${product.category})`,
-        price: product.salePrice,
-        stock: product.currentStock,
-        category: product.category,
-        unit: product.unitOfMeasure,
-      }));
+      const productOptions = branchProducts
+        .filter((p) => p.category !== "RAW_MATERIAL")
+        .map((product) => ({
+          id: product.id,
+          label: `${product.name} - (${product.category})`,
+          price: product.salePrice,
+          stock: product.currentStock,
+          category: product.category,
+          unit: product.unitOfMeasure,
+        }));
 
+      // 5. Return strictly typed Transformed Data
       return {
         zones,
-        assignedZones,
         zoneOptions,
         allCustomers,
         customerOptions,
-        totalCustomersCount,
         branchProducts,
         productOptions,
       };
     },
   });
 };
+
+export const useOrderList = (dateString: string) => {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: orderKeys.list(dateString),
+    queryFn: () => ordersService.getOrdersList(api, dateString),
+    enabled: !!dateString,
+  })
+}
