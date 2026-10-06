@@ -1,4 +1,4 @@
-export const orderKeys = {
+export const orderKeysMain = {
   all: ['rider-orders'] as const,
-  todayActive: () => [...orderKeys.all, 'today-active'] as const,
+  todayActive: () => [...orderKeysMain.all, 'today-active'] as const,
 };

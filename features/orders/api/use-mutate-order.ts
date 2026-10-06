@@ -4,6 +4,7 @@ import { logKeys } from '@/features/wallet/api/log-keys';
 import { useApiClient } from '@/lib/api-client';
 import { orderKeys } from './order-keys';
 import { ordersService } from './orders.service';
+import { orderKeysMain } from '@/features/main/api/order-keys';
 import Toast from 'react-native-toast-message';
 
 export const useCreateOrder = (branchId: string) => {
@@ -22,6 +23,7 @@ export const useCreateOrder = (branchId: string) => {
             query.invalidateQueries({ queryKey: logKeys.list(branchId) })
             query.invalidateQueries({ queryKey: orderKeys.lists() })
             query.invalidateQueries({ queryKey: orderKeys.data(branchId) })
+            query.invalidateQueries({ queryKey: orderKeysMain.todayActive() })
         },
         onError: (err: any) => {
             Toast.show({

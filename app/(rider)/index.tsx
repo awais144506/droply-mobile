@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Alert, Text, TouchableOpacity } from 'react-native';
+import { View, Alert, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+import { RefreshCw } from 'lucide-react-native'; // 🔥 Import the refresh icon
+
 import { useTodayActiveOrders, useUpdateOrderStatus } from '@/features/main/api/use-rider-orders';
 import { useRiderLocation } from '@/features/main/api/use-rider-location';
 import { useOrderMetrics } from '@/features/main/api/use-order-metrics';
@@ -15,7 +17,10 @@ import RiderOrderSettlementView from '@/features/main/components/RiderOrderSettl
 
 export default function MainScreen() {
   const { user } = useUser();
-  const { data: orders = [] } = useTodayActiveOrders();
+
+  // 🔥 Extract refetch and isFetching from your query hook
+  const { data: orders = [], refetch, isFetching } = useTodayActiveOrders();
+
   const metrics = useOrderMetrics(orders);
   const updateOrderStatus = useUpdateOrderStatus();
 
@@ -26,9 +31,7 @@ export default function MainScreen() {
     orders.find(o => o.status === 'ON_ROUTE' || o.status === 'ARRIVED')?.id || null
   );
 
-  // 🔥 State for the full-screen settlement view
   const [settlementOrder, setSettlementOrder] = useState<RiderActiveOrder | null>(null);
-
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
 
   const { broadcastCoordinates } = useRiderSocket(isRiding, user?.id);
@@ -101,7 +104,7 @@ export default function MainScreen() {
             setIsRiding(false);
             setSelectedOrderId(null);
             setRouteCoordinates([]);
-            setSettlementOrder(null); // Close the settlement screen if open
+            setSettlementOrder(null);
           }
         },
         onError: (err: any) => {
@@ -121,6 +124,22 @@ export default function MainScreen() {
           empties={metrics.totalEmptiesToCollect}
         />
 
+        {/* 🔥 Floating Refresh Button */}
+        <View style={styles.refreshContainer}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => refetch()}
+            disabled={isFetching}
+            style={styles.refreshButton}
+          >
+            {isFetching ? (
+              <ActivityIndicator size="small" color="#0284c7" />
+            ) : (
+              <RefreshCw size={20} color="#0f172a" />
+            )}
+          </TouchableOpacity>
+        </View>
+
         <RiderMapView
           riderLocation={riderLocation}
           orders={orders}
@@ -137,7 +156,6 @@ export default function MainScreen() {
           </View>
         )}
 
-        {/* Hide the list panel if the settlement screen is open */}
         {ordersWithDistance.length > 0 && !settlementOrder && (
           <RiderOrderListPanel
             orders={ordersWithDistance}
@@ -145,7 +163,7 @@ export default function MainScreen() {
             hasActiveRide={hasActiveOrder}
             onSelectOrder={handleSelectOrder}
             onUpdateStatus={handleUpdateOrderStatus}
-            onOpenDetails={(order) => setSettlementOrder(order)} // 🔥 Opens the view
+            onOpenDetails={(order) => setSettlementOrder(order)}
           />
         )}
 
@@ -161,3 +179,28 @@ export default function MainScreen() {
     </SafeAreaView>
   );
 }
+
+// 🔥 Native styles to ensure perfect rendering over the map
+const styles = StyleSheet.create({
+  refreshContainer: {
+    position: 'absolute',
+    top: 100, // Positions it right below your RiderMetricsHeader
+    right: 16,
+    zIndex: 30, // Keeps it above the map
+  },
+  refreshButton: {
+    backgroundColor: '#ffffff',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5, // Android shadow
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  }
+});
