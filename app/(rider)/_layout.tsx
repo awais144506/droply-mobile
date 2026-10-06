@@ -1,60 +1,11 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useRef } from "react";
-import { AppState, View } from "react-native";
+import React from "react";
+import { View, StyleSheet } from "react-native";
 import { Tabs, usePathname } from "expo-router";
 import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
-import { useApiClient } from "@/lib/api-client";
-import Toast from "react-native-toast-message";
 
 export default function RiderLayout() {
-  const api = useApiClient();
-  const appState = useRef(AppState.currentState);
   const pathname = usePathname();
   const isOrdersActive = pathname.includes('/orders') || pathname.includes('/sale');
-
-  useEffect(() => {
-    const updatePresence = async (status: 'ONLINE' | 'OFFLINE', showToast: boolean = false) => {
-      try {
-        api.post('/tracking/presence', { status })
-        if (status === 'ONLINE' && showToast) {
-          Toast.show({
-            type: 'success',
-            text1: 'Online Now',
-            text2: 'You are connected to the dispatch system.',
-            position: 'top',
-            visibilityTime: 3000,
-          });
-        }
-      } catch (error) {
-        console.error("Error in updatePresence:", error);
-      }
-    };
-
-    // 1. Initial load (Show Toast)
-    updatePresence('ONLINE', true);
-
-    // 2. App State Changes
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (appState.current === "active" && (nextAppState === "background" || nextAppState === "inactive")) {
-        updatePresence('OFFLINE', false);
-      } else if ((appState.current === "background" || appState.current === "inactive") && nextAppState === "active") {
-        updatePresence('ONLINE', true); // Show Toast when they come back
-      }
-
-      appState.current = nextAppState;
-    });
-    const heartbeatInterval = setInterval(() => {
-      if (appState.current === "active") {
-        updatePresence('ONLINE', false);
-      }
-    }, 2 * 60 * 1000);
-
-    // Cleanup
-    return () => {
-      subscription.remove();
-      clearInterval(heartbeatInterval);
-    };
-  }, []);
 
   return (
     <Tabs
@@ -90,7 +41,7 @@ export default function RiderLayout() {
         options={{
           title: "Route",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
+            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
               <Map size={20} color={color} />
             </View>
           ),
@@ -101,7 +52,7 @@ export default function RiderLayout() {
         options={{
           title: "Wallet",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
+            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
               <Wallet size={20} color={color} />
             </View>
           ),
@@ -115,7 +66,7 @@ export default function RiderLayout() {
             const active = focused || isOrdersActive;
             const iconColor = active ? "#0284c7" : color;
             return (
-              <View className={`items-center justify-center h-8 w-14 rounded-lg ${active ? "bg-sky-200" : ""}`}>
+              <View style={[styles.iconContainer, active && styles.iconActiveBackground]}>
                 <Bike size={20} color={iconColor} />
               </View>
             );
@@ -127,7 +78,7 @@ export default function RiderLayout() {
         options={{
           title: "Tasks",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
+            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
               <ClipboardList size={20} color={color} />
             </View>
           ),
@@ -138,7 +89,7 @@ export default function RiderLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center h-8 w-14 rounded-lg ${focused ? "bg-sky-200" : ""}`}>
+            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
               <User size={20} color={color} />
             </View>
           ),
@@ -151,3 +102,17 @@ export default function RiderLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 32,
+    width: 56,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  iconActiveBackground: {
+    backgroundColor: '#bae6fd',
+  }
+});

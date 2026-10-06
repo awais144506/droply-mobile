@@ -7,8 +7,6 @@ type BranchSettingsData = {
 }
 
 const BranchSettings = ({ branch }: BranchSettingsData) => {
-    console.log("BRANCHDATA",branch)
-
     if (!branch) return null;
 
     return (

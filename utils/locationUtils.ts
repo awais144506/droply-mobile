@@ -40,7 +40,7 @@ export function getDistanceInMeters(
 
 export function formatDistance(meters: number): string {
   if (meters < 1000) {
-    return `${Math.round(meters)}m`;
+    return `${Math.round(meters)} M . Away`;
   }
-  return `${(meters / 1000).toFixed(1)}km`;
+  return `${(meters / 1000).toFixed(1)} KM . Away`;
 }

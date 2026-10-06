@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, ScrollView, TouchableOpacity, Text } from "react-native";
+import { View, ScrollView, TouchableOpacity, Text, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Wallet, Receipt } from "lucide-react-native";
 import { format } from "date-fns";
@@ -22,7 +22,7 @@ export default function WalletScreen() {
 
   // 2. Format the date for the API
   const dateString = format(selectedDate, 'yyyy-MM-dd');
-  const { data: logs = [], isLoading, isError, error } = useRiderLogs(branchId, dateString);
+  const { data: logs = [], isLoading, isError, error, refetch, isRefetching } = useRiderLogs(branchId, dateString);
 
   const totalCashIn = 5000;
 
@@ -54,7 +54,18 @@ export default function WalletScreen() {
           <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Manage your logs</Text>
         </View>
       </View>
-      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 px-4 pt-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={["#0284c7"]}
+            tintColor="#0284c7"
+          />
+        }
+      >
         <DateFilterBar
           activeFilter={activeFilter}
           customDate={selectedDate}
