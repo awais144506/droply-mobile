@@ -19,8 +19,7 @@ import { useRequestNewCustomer } from "@/features/orders/api/use-customer";
 import { useRole } from "@/lib/use-role";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import Loading from "@/app/loading";
-
-
+import { addCustomerStyles as styles } from "@/features/orders/style/order-style"; // Adjust path if needed
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();
@@ -44,7 +43,7 @@ export default function AddNewCustomerScreen() {
     setAlertConfig((prev) => ({ ...prev, visible: false }));
   };
 
-  // 2. Initialize React Hook Form
+  // Initialize React Hook Form
   const {
     control,
     handleSubmit,
@@ -60,7 +59,7 @@ export default function AddNewCustomerScreen() {
     },
   });
 
-  // 3. Form Submit Handler using CustomAlert
+  // Form Submit Handler using CustomAlert
   const onSubmit = (data: CustomerFormData) => {
     const payload = {
       ...data,
@@ -70,7 +69,7 @@ export default function AddNewCustomerScreen() {
 
     showAlert({
       title: "Send to Management",
-      message: `Send  "${data.name}" customer details to manager?`,
+      message: `Send "${data.name}" customer details to manager?`,
       confirmText: "Submit Request",
       cancelText: "Cancel",
       onCancel: closeAlert,
@@ -84,41 +83,45 @@ export default function AddNewCustomerScreen() {
   };
 
   if (isPending) return <Loading text="Sending Request..." />
+  
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardView}>
 
-        <View className="px-5 py-4 bg-white border-b border-slate-200 flex-row items-center gap-14 z-10">
-          <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} className="h-9 w-9 bg-slate-800 rounded-xl items-center justify-center">
-            <ArrowLeft size={18} color="#ffff" />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} style={styles.backButton}>
+            <ArrowLeft size={18} color="#ffffff" />
           </TouchableOpacity>
-          <View className="flex-row items-center gap-3">
-            <View className="h-10 w-10 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+          <View style={styles.headerTitleContainer}>
+            <View style={styles.headerIconWrapper}>
               <UserPlus size={20} color="#0f172a" />
             </View>
             <View>
-              <Text className="text-lg font-extrabold text-slate-900">Add New Customer</Text>
+              <Text style={styles.headerTitleText}>Add New Customer</Text>
             </View>
           </View>
         </View>
 
-        <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
-          <View className="mb-4 bg-sky-50 border border-sky-200 p-3.5 rounded-2xl">
-            <Text className="text-xs font-bold text-sky-900 mb-0.5">Manager Approval Required</Text>
-            <Text className="text-[11px] text-sky-700 leading-relaxed">
+          <View style={styles.infoBanner}>
+            <Text style={styles.infoTitle}>Manager Approval Required</Text>
+            <Text style={styles.infoText}>
               Riders cannot directly add accounts. Submitting this form will ping the plant manager with the customer details to register them into the system.
             </Text>
           </View>
 
-          <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 shadow-sm">
-            <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-3">Customer Details</Text>
+          <View style={styles.formCard}>
+            <Text style={styles.formCardTitle}>Customer Details</Text>
 
-            <View className="gap-4">
+            <View style={styles.inputsContainer}>
 
               {/* Name Field */}
               <View>
-                <View className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${errors.name ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'}`}>
+                <View style={[
+                  styles.inputWrapperBase, 
+                  errors.name ? styles.inputWrapperError : styles.inputWrapperNormal
+                ]}>
                   <User size={16} color={errors.name ? "#f43f5e" : "#64748b"} />
                   <Controller
                     control={control}
@@ -130,17 +133,20 @@ export default function AddNewCustomerScreen() {
                         value={value}
                         placeholder="Customer Name or Shop Name..."
                         placeholderTextColor="#94a3b8"
-                        className="flex-1 ml-2 text-sm font-semibold text-slate-900"
+                        style={styles.textInput}
                       />
                     )}
                   />
                 </View>
-                {errors.name && <Text className="text-[10px] text-rose-500 font-medium mt-1 ml-1">{errors.name.message}</Text>}
+                {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
               </View>
 
               {/* Phone Field */}
               <View>
-                <View className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 overflow-hidden ${errors.phone ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'}`}>
+                <View style={[
+                  styles.inputWrapperBase, 
+                  errors.phone ? styles.inputWrapperError : styles.inputWrapperNormal
+                ]}>
                   <Phone size={16} color={errors.phone ? "#f43f5e" : "#64748b"} />
                   <Controller
                     control={control}
@@ -155,6 +161,8 @@ export default function AddNewCustomerScreen() {
                           onChange(text);
                         }}
                         placeholder="e.g 03216907425"
+                        // FIX: Explicitly passing textInputProps to force placeholder color
+                        textInputProps={{ placeholderTextColor: '#94a3b8' }}
                         containerStyle={{ flex: 1, backgroundColor: 'transparent', height: 48 }}
                         textContainerStyle={{ backgroundColor: 'transparent', paddingVertical: 0, paddingHorizontal: 0 }}
                         textInputStyle={{ fontSize: 14, fontWeight: "600", color: "#0f172a", height: 48, padding: 0, margin: 0 }}
@@ -165,12 +173,15 @@ export default function AddNewCustomerScreen() {
                     )}
                   />
                 </View>
-                {errors.phone && <Text className="text-[10px] text-rose-500 font-medium mt-1 ml-1">{errors.phone.message}</Text>}
+                {errors.phone && <Text style={styles.errorText}>{errors.phone.message}</Text>}
               </View>
 
               {/* Address Field */}
               <View>
-                <View className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${errors.address ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'}`}>
+                <View style={[
+                  styles.inputWrapperBase, 
+                  errors.address ? styles.inputWrapperError : styles.inputWrapperNormal
+                ]}>
                   <Building2 size={16} color={errors.address ? "#f43f5e" : "#64748b"} />
                   <Controller
                     control={control}
@@ -182,27 +193,29 @@ export default function AddNewCustomerScreen() {
                         value={value}
                         placeholder="Shop # / Area / Address"
                         placeholderTextColor="#94a3b8"
-                        className="flex-1 ml-2 text-sm font-semibold text-slate-900"
+                        style={styles.textInput}
                       />
                     )}
                   />
                 </View>
-                {errors.address && <Text className="text-[10px] text-rose-500 font-medium mt-1 ml-1">{errors.address.message}</Text>}
+                {errors.address && <Text style={styles.errorText}>{errors.address.message}</Text>}
               </View>
 
             </View>
           </View>
         </ScrollView>
 
-        <View className="p-4 bg-white border-t border-slate-200">
+        <View style={styles.footer}>
           <TouchableOpacity
             disabled={isPending || !isValid}
             onPress={handleSubmit(onSubmit)}
-            className={`w-full h-12 rounded-xl items-center justify-center flex-row gap-2 shadow-sm ${(isPending || !isValid) ? "bg-gray-400" : "bg-sky-600 active:bg-sky-700"
-              }`}
+            style={[
+              styles.submitBtnBase,
+              (isPending || !isValid) ? styles.submitBtnInvalid : styles.submitBtnValid
+            ]}
           >
             <Send size={16} color="#ffffff" />
-            <Text className="text-white text-sm font-bold">Send Request to Manager</Text>
+            <Text style={styles.submitBtnText}>Send Request to Manager</Text>
           </TouchableOpacity>
         </View>
 

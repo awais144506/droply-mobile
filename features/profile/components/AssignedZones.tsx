@@ -1,5 +1,7 @@
-import { View, Text, ActivityIndicator } from 'react-native'
-import { Lock, MapPin } from 'lucide-react-native'
+import React from 'react';
+import { View, Text, ActivityIndicator } from 'react-native';
+import { Lock, MapPin } from 'lucide-react-native';
+import { assignedZonesStyles as styles } from '../style/profile-styles';
 
 type Props = {
     isZonesLoading: boolean;
@@ -8,55 +10,55 @@ type Props = {
         name: string;
         totalCustomers: number;
     }[];
-}
+};
 
 export const AssignedZones = ({ isZonesLoading, assignedZones }: Props) => {
     return (
         <View>
-            <View className="bg-white rounded-2xl border border-slate-200 p-4 mb-5 shadow-2xs">
-                <View className="flex-row items-center justify-between pb-4 border-b border-slate-100 mb-2">
-                    <Text className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+            <View style={styles.card}>
+                <View style={styles.headerRow}>
+                    <Text style={styles.headerTitle}>
                         Assigned Zones
                     </Text>
-                    <View className="flex-row items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                    <View style={styles.badge}>
                         <Lock size={12} color="#94a3b8" />
-                        <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        <Text style={styles.badgeText}>
                             Managed By Branch
                         </Text>
                     </View>
                 </View>
 
-                <View className="space-y-4">
+                <View>
                     {isZonesLoading ? (
-                        <ActivityIndicator size="small" color="#4f46e5" className="py-4" />
+                        <ActivityIndicator size="small" color="#4f46e5" style={styles.loader} />
                     ) : assignedZones.length > 0 ? (
                         assignedZones.map((zone, index) => (
                             <View
                                 key={zone.id}
-                                className={index > 0 ? "pt-4 border-t border-slate-100" : ""}
+                                style={index > 0 ? styles.zoneItemBordered : null}
                             >
-                                <View className="flex-row items-center justify-between py-1.5">
-                                    <View className="flex-row items-center gap-3">
-                                        <View className="h-8 w-8 rounded-lg bg-indigo-50 items-center justify-center">
+                                <View style={styles.zoneRow}>
+                                    <View style={styles.zoneLeft}>
+                                        <View style={styles.iconContainer}>
                                             <MapPin size={15} color="#4f46e5" />
                                         </View>
-                                        <Text className="text-xs font-semibold text-slate-800 mt-0.5">
+                                        <Text style={styles.zoneName}>
                                             {zone.name}
                                         </Text>
                                     </View>
-                                    <Text className="text-xs font-semibold text-slate-800 mt-0.5">
-                                        Total Customers: <Text className="text-amber-600 text-sm">{zone.totalCustomers}</Text>
+                                    <Text style={styles.customerCountText}>
+                                        Total Customers: <Text style={styles.customerCountHighlight}>{zone.totalCustomers}</Text>
                                     </Text>
                                 </View>
                             </View>
                         ))
                     ) : (
-                        <Text className="text-sm text-slate-500 text-center py-4 font-medium">
+                        <Text style={styles.emptyText}>
                             No route sectors currently assigned.
                         </Text>
                     )}
                 </View>
             </View>
         </View>
-    )
-}
+    );
+};

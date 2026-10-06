@@ -16,7 +16,8 @@ import OrderFinancialsCard from "@/features/orders/components/create-order/Order
 import OrderScheduleCard from "@/features/orders/components/create-order/OrderScheduleCard";
 import { useRole } from "@/lib/use-role";
 import { useCreateOrder } from "@/features/orders/api/use-mutate-order";
-
+import { newOrderScreenStyles as styles } from "@/features/orders/style/order-style";
+import Loading from "@/app/loading";
 
 export default function NewOrderScreen() {
     const router = useRouter();
@@ -28,6 +29,14 @@ export default function NewOrderScreen() {
     const [alertConfig, setAlertConfig] = useState<CustomAlertProps>({
         visible: false, title: "", message: "", onConfirm: () => { },
     });
+
+    const showAlert = (config: Omit<CustomAlertProps, "visible">) => {
+        setAlertConfig({ ...config, visible: true });
+    };
+
+    const closeAlert = () => {
+        setAlertConfig((prev) => ({ ...prev, visible: false }));
+    };
 
     const methods = useForm<NewOrderFormData>({
         resolver: yupResolver(newOrderSchema),
@@ -46,57 +55,75 @@ export default function NewOrderScreen() {
     const { handleSubmit, formState: { isSubmitting } } = methods;
 
     const onSubmit = (formData: NewOrderFormData) => {
-        const subtotal = formData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const finalTotal = subtotal + (formData.deliveryCharges || 0) - (formData.discountAmount || 0);
-        const backendPayload = {
-            branchId: branchId,
-            saleType: 'DELIVERY',
-            customerId: formData.customerId,
-            scheduledDate: formData.scheduleDate ? new Date(formData.scheduleDate).toISOString() : undefined,
-            discount: formData.discountAmount || 0,
-            deliveryCharges: formData.deliveryCharges || 0,
-            paymentMethod: 'CASH',
-            amountPaid: finalTotal,
-            items: formData.items.map(item => ({
-                productId: item.productId,
-                paidQty: item.quantity,
-                emptiesIn: 0,
-                hasOffer: false,
-                offerQty: 0,
-                chargedDeposit: 0,
-                isDepositCharged: false
-            }))
-        };
-        createOrder(backendPayload);
-        methods.reset();
-        router.replace('/(rider)/orders');
+        showAlert({
+            title: "Confirm Order Generation",
+            message: "Are you sure you want to generate and dispatch this order?",
+            confirmText: "Generate",
+            cancelText: "Cancel",
+            onCancel: closeAlert,
+            onConfirm: () => {
+                closeAlert();
+
+                const subtotal = formData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const finalTotal = subtotal + (formData.deliveryCharges || 0) - (formData.discountAmount || 0);
+
+                const backendPayload = {
+                    branchId: branchId,
+                    saleType: 'DELIVERY',
+                    customerId: formData.customerId,
+                    scheduledDate: formData.scheduleDate ? new Date(formData.scheduleDate).toISOString() : undefined,
+                    discount: formData.discountAmount || 0,
+                    deliveryCharges: formData.deliveryCharges || 0,
+                    paymentMethod: 'CASH',
+                    amountPaid: finalTotal,
+                    items: formData.items.map(item => ({
+                        productId: item.productId,
+                        paidQty: item.quantity,
+                        emptiesIn: 0,
+                        hasOffer: false,
+                        offerQty: 0,
+                        chargedDeposit: 0,
+                        isDepositCharged: false
+                    }))
+                };
+
+                createOrder(backendPayload, {
+                    onSuccess: () => {
+                        methods.reset();
+                        router.replace('/(rider)/orders');
+                    }
+                });
+            }
+        });
     };
 
+    if (isPending) return <Loading text="Creating Order..." />;
+
     return (
-        <SafeAreaView className="flex-1 bg-slate-50">
+        <SafeAreaView style={styles.safeArea}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "android" ? "padding" : undefined}
-                className="flex-1"
+                style={styles.keyboardView}
             >
-                <View className="px-5 py-4 bg-white border-b border-slate-200 flex-row items-center gap-14 z-10">
-                    <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} className="h-9 w-9 bg-slate-800 rounded-xl items-center justify-center">
-                        <ArrowLeft size={18} color="#ffff" />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.replace('/(rider)/orders')} style={styles.backButton}>
+                        <ArrowLeft size={18} color="#ffffff" />
                     </TouchableOpacity>
-                    <View className="flex-row items-center gap-3">
-                        <View className="h-10 w-10 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+                    <View style={styles.headerTitleContainer}>
+                        <View style={styles.headerIconWrapper}>
                             <ShoppingCart size={20} color="#0284c7" />
                         </View>
                         <View>
-                            <Text className="text-lg font-extrabold text-slate-900">Create New Order</Text>
+                            <Text style={styles.headerTitleText}>Create New Order</Text>
                         </View>
                     </View>
                 </View>
 
                 <FormProvider {...methods}>
                     <ScrollView
-                        className="flex-1 px-4 pt-5"
+                        style={styles.scrollView}
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ paddingBottom: 40 }}
+                        contentContainerStyle={styles.scrollContent}
                         nestedScrollEnabled={true}
                         keyboardShouldPersistTaps="handled"
                         refreshControl={
@@ -114,15 +141,18 @@ export default function NewOrderScreen() {
                         <OrderFinancialsCard data={data} />
 
                     </ScrollView>
-                    <View className="p-4 bg-white border-t border-slate-200">
+
+                    <View style={styles.footer}>
                         <TouchableOpacity
                             disabled={isSubmitting || !methods.formState.isValid || isPending}
                             onPress={handleSubmit(onSubmit)}
-                            className={`w-full h-12 rounded-xl items-center justify-center flex-row gap-2 shadow-sm ${(isSubmitting || !methods.formState.isValid) ? "bg-gray-400" : "bg-sky-600 active:bg-sky-700"
-                                }`}
+                            style={[
+                                styles.submitBtnBase,
+                                (isSubmitting || !methods.formState.isValid || isPending) ? styles.submitBtnInvalid : styles.submitBtnValid
+                            ]}
                         >
                             <CheckCircle2 size={20} color="#ffffff" strokeWidth={2.5} />
-                            <Text className="text-white text-base font-bold">Generate Order</Text>
+                            <Text style={styles.submitBtnText}>Generate Order</Text>
                         </TouchableOpacity>
                     </View>
                 </FormProvider>

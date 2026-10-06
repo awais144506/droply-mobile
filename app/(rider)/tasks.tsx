@@ -4,6 +4,7 @@ import { ClipboardList } from "lucide-react-native";
 import { TaskCard } from "@/features/tasks/components/TaskCard";
 import { useRole } from "@/lib/use-role";
 import { useTasks, useUpdateTask } from "@/features/tasks/api/use-tasks";
+import { mainTasksPageStyle as styles } from "@/features/tasks/style/task-styles";
 import Loading from "../loading";
 import Error from "../error";
 
@@ -11,9 +12,9 @@ export default function TasksScreen() {
   const { branchId } = useRole();
   const { data: tasks = [], isLoading, isError, refetch, isRefetching } = useTasks(branchId);
   const { mutate: updateTask, isPending: isUpdating } = useUpdateTask();
+
   const pendingTasks = tasks.filter((t) => t.status === "INCOMPLETE");
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
-
 
   const handleToggleTask = (taskId: string) => {
     if (isUpdating) return;
@@ -27,19 +28,19 @@ export default function TasksScreen() {
   if (isError) return <Error text="tasks" />
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Header */}
-      <View className="px-4 py-3 bg-white border-b border-slate-200">
-        <View className="flex-row items-center gap-2">
-          <View className="h-9 w-9 rounded-xl bg-sky-50 items-center justify-center border border-sky-100">
+      <View style={styles.header}>
+        <View style={styles.headerTitleRow}>
+          <View style={styles.headerIconContainer}>
             <ClipboardList size={25} color="#0284c7" />
           </View>
-          <Text className="text-lg font-bold text-slate-900">My Tasks</Text>
+          <Text style={styles.headerTitle}>My Tasks</Text>
         </View>
       </View>
 
       <ScrollView
-        className="flex-1 px-4 pt-4"
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -52,9 +53,9 @@ export default function TasksScreen() {
       >
         {/* Pending Tasks */}
         {pendingTasks.length > 0 && (
-          <View className="mb-4">
-            <Text className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
-              To-Do : <Text className="text-amber-600">({pendingTasks.length})</Text>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              To-Do : <Text style={styles.pendingCount}>({pendingTasks.length})</Text>
             </Text>
             {pendingTasks.map((task) => (
               <TaskCard key={task.id} task={task} onToggle={handleToggleTask} />
@@ -64,17 +65,17 @@ export default function TasksScreen() {
 
         {/* Empty State */}
         {pendingTasks.length === 0 && (
-          <View className="items-center justify-center py-8 mb-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-            <Text className="text-sm font-bold text-emerald-700">All caught up!</Text>
-            <Text className="text-xs text-emerald-600 mt-1">No pending tasks for today.</Text>
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateTitle}>All caught up!</Text>
+            <Text style={styles.emptyStateSubtext}>No pending tasks for today.</Text>
           </View>
         )}
 
         {/* Completed Tasks */}
         {completedTasks.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 mt-2">
-              Completed : <Text className="text-emerald-600">({completedTasks.length})</Text>
+          <View style={styles.completedSectionContainer}>
+            <Text style={[styles.sectionTitle, styles.completedTitleMargin]}>
+              Completed : <Text style={styles.completedCount}>({completedTasks.length})</Text>
             </Text>
             {completedTasks.map((task) => (
               <TaskCard key={task.id} task={task} onToggle={handleToggleTask} />
@@ -85,3 +86,4 @@ export default function TasksScreen() {
     </SafeAreaView>
   );
 }
+

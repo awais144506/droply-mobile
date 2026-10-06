@@ -5,6 +5,7 @@ import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { MapPin, AlertCircle, RefreshCcw } from "lucide-react-native";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { NewOrderFormData } from "../../schema/order-schema";
+import { customerCardStyles as styles } from "../../style/order-style"; // Adjust path if needed
 
 export default function OrderCustomerCard({ data, isLoading }: { data: any, isLoading: boolean }) {
     const { control, setValue } = useFormContext<NewOrderFormData>();
@@ -12,6 +13,7 @@ export default function OrderCustomerCard({ data, isLoading }: { data: any, isLo
     const selectedCustomerId = useWatch({ control, name: "customerId" });
     const zoneOptions = data?.zoneOptions || [];
     const customerOptions = data?.customerOptions || [];
+    
     // Filter customers by selected zone
     const availableCustomers = useMemo(() => {
         if (!selectedZoneId) return [];
@@ -25,21 +27,21 @@ export default function OrderCustomerCard({ data, isLoading }: { data: any, isLo
 
     if (isLoading) {
         return (
-            <View className="bg-white p-6 rounded-[24px] border border-slate-200 mb-4 shadow-sm items-center justify-center">
+            <View style={styles.loadingCard}>
                 <ActivityIndicator size="small" color="#0284c7" />
-                <Text className="text-xs font-bold text-slate-400 mt-3 uppercase tracking-wider">Loading Accounts...</Text>
+                <Text style={styles.loadingText}>Loading Accounts...</Text>
             </View>
         );
     }
 
     return (
-        <View className="bg-white p-5 rounded-[24px] border border-slate-200 mb-4 shadow-sm">
-            <View className="flex-row items-center gap-2 mb-4">
+        <View style={styles.cardBase}>
+            <View style={styles.headerRow}>
                 <MapPin size={16} color="#30cf4c" />
-                <Text className="text-[11px] text-slate-800 font-bold uppercase tracking-wider">Delivery Destination</Text>
+                <Text style={styles.headerText}>Delivery Destination</Text>
             </View>
 
-            <View className="gap-3">
+            <View style={styles.formContainer}>
                 {/* Zone Selection */}
                 <Controller
                     control={control}
@@ -56,7 +58,7 @@ export default function OrderCustomerCard({ data, isLoading }: { data: any, isLo
                                     setValue("customerId", "", { shouldValidate: true }); // Wipe customer if zone changes
                                 }}
                             />
-                            {error && <Text className="text-[10px] font-bold text-rose-500 mt-1 ml-1">{error.message}</Text>}
+                            {error && <Text style={styles.errorText}>{error.message}</Text>}
                         </View>
                     )}
                 />
@@ -66,7 +68,7 @@ export default function OrderCustomerCard({ data, isLoading }: { data: any, isLo
                     control={control}
                     name="customerId"
                     render={({ field: { value, onChange }, fieldState: { error } }) => (
-                        <View className={!selectedZoneId ? "opacity-50" : ""}>
+                        <View style={!selectedZoneId ? styles.disabledWrapper : undefined}>
                             <SearchableSelect
                                 key={`customer-select-${selectedZoneId || 'empty'}`}
                                 label="Select Customer"
@@ -76,10 +78,10 @@ export default function OrderCustomerCard({ data, isLoading }: { data: any, isLo
                                 onSelect={(id) => onChange(id)}
                                 disabled={!selectedZoneId}
                             />
-                            {error && <Text className="text-[10px] font-bold text-rose-500 mt-1 ml-1">{error.message}</Text>}
+                            {error && <Text style={styles.errorText}>{error.message}</Text>}
 
                             {selectedZoneId && availableCustomers.length === 0 && (
-                                <Text className="text-[10px] font-bold text-amber-500 mt-1 ml-1">No registered customers in this zone.</Text>
+                                <Text style={styles.warningText}>No registered customers in this zone.</Text>
                             )}
                         </View>
                     )}
@@ -88,31 +90,40 @@ export default function OrderCustomerCard({ data, isLoading }: { data: any, isLo
 
             {/* Customer Financial Ledger UI */}
             {selectedCustomerData?.customerCredit > 0 && (
-                <View className="mt-5 pt-4 border-t border-slate-100 flex-row gap-3">
+                <View style={styles.ledgerContainer}>
 
                     {/* Outstanding Balance Block */}
-                    <View className={`flex-1 p-3 rounded-2xl border ${selectedCustomerData?.customerCredit > 0 ? "bg-rose-50 border-rose-200" : "bg-emerald-50 border-emerald-200"}`}>
-                        <View className="flex-row items-center gap-1.5 mb-1">
-                            <AlertCircle size={12} color={selectedCustomerData?.customerCredit > 0 ? "#e11d48" : "#059669"} />
-                            <Text className={`text-[10px] font-bold uppercase tracking-wider ${selectedCustomerData?.customerCredit > 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                    <View style={[
+                        styles.ledgerBlockBase,
+                        selectedCustomerData.customerCredit > 0 ? styles.ledgerBad : styles.ledgerGood
+                    ]}>
+                        <View style={styles.ledgerHeaderRow}>
+                            <AlertCircle size={12} color={selectedCustomerData.customerCredit > 0 ? "#e11d48" : "#059669"} />
+                            <Text style={[
+                                styles.ledgerLabelBase,
+                                selectedCustomerData.customerCredit > 0 ? styles.ledgerLabelBad : styles.ledgerLabelGood
+                            ]}>
                                 Outstanding
                             </Text>
                         </View>
-                        <Text className={`text-base font-extrabold ${selectedCustomerData.customerCredit > 0 ? "text-rose-700" : "text-emerald-700"}`}>
-                            Rs. {selectedCustomerData?.customerCredit}
+                        <Text style={[
+                            styles.ledgerValueBase,
+                            selectedCustomerData.customerCredit > 0 ? styles.ledgerValueBad : styles.ledgerValueGood
+                        ]}>
+                            Rs. {selectedCustomerData.customerCredit}
                         </Text>
                     </View>
 
                     {/* Returnables Block */}
                     {selectedCustomerData.returnablesLength > 0 && (
-                        <View className="flex-1 p-3 rounded-2xl bg-sky-50 border border-sky-200">
-                            <View className="flex-row items-center gap-1.5 mb-1">
+                        <View style={[styles.ledgerBlockBase, styles.ledgerReturnables]}>
+                            <View style={styles.ledgerHeaderRow}>
                                 <RefreshCcw size={12} color="#0284c7" />
-                                <Text className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">
+                                <Text style={[styles.ledgerLabelBase, styles.ledgerLabelReturnables]}>
                                     Items Held
                                 </Text>
                             </View>
-                            <Text className="text-base font-extrabold text-sky-800">
+                            <Text style={[styles.ledgerValueBase, styles.ledgerValueReturnables]}>
                                 {selectedCustomerData.returnablesLength} Items
                             </Text>
                         </View>

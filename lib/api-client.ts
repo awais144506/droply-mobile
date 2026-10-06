@@ -27,6 +27,14 @@ export function useApiClient() {
     instance.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // 🔥 1. Extract custom NestJS backend message if available
+        const backendMessage = error.response?.data?.message;
+        if (backendMessage) {
+          // NestJS validation errors can sometimes be arrays of strings
+          error.message = Array.isArray(backendMessage) ? backendMessage[0] : backendMessage;
+        }
+
+        // 2. Handle Auth errors (401 / 403)
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.warn("Auth Error Detected: Checking if user was suspended...");
 
@@ -44,7 +52,7 @@ export function useApiClient() {
     );
 
     return instance;
-  }, [getToken, user]); // Only recreate if Clerk's core functions change
+  }, [getToken, user]);
 
   return api;
 }

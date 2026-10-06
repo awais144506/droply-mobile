@@ -1,6 +1,5 @@
-import {
-  ScrollView, RefreshControl
-} from "react-native";
+import React from 'react';
+import { ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRole } from "@/lib/use-role";
 import { ProfileDetails } from "@/features/profile/components/ProfileDetails";
@@ -12,34 +11,45 @@ import { useRiderProfile } from "@/features/profile/api/use-profile";
 import Loading from "../loading";
 
 export default function RiderProfileScreen() {
-  const { userId } = useRole();
-  const { data, isLoading, refetch, isRefetching } = useRiderProfile(userId || "");
-  const profile = data?.rider;
-  const branch = data?.branch
-  const assignedZones = data?.zones || [];
+    const { userId } = useRole();
+    const { data, isLoading, refetch, isRefetching } = useRiderProfile(userId || "");
+    const profile = data?.rider;
+    const branch = data?.branch
+    const assignedZones = data?.zones || [];
 
-  if (isLoading) return <Loading text="Loading Profile..." />
+    if (isLoading) return <Loading text="Loading Profile..." />
 
-  return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <ScrollView
-        className="flex-1 px-5 pt-12"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={["#0284c7"]} />
-        }
-      >
-        <ProfileDetails />
-        <BranchSettings
-          branch={branch}
-        />
-        <Information
-          profile={profile}
-        />
-        <AssignedZones isZonesLoading={isLoading} assignedZones={assignedZones} />
-        <Footer />
-      </ScrollView>
-    </SafeAreaView>
-  );
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={["#0284c7"]} />
+                }
+            >
+                <ProfileDetails />
+                <BranchSettings branch={branch} />
+                <Information profile={profile} />
+                <AssignedZones isZonesLoading={isLoading} assignedZones={assignedZones} />
+                <Footer />
+            </ScrollView>
+        </SafeAreaView>
+    );
 }
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#f8fafc', // bg-slate-50
+    },
+    scrollView: {
+        flex: 1,
+        paddingHorizontal: 20, // px-5
+        paddingTop: 48, // pt-12
+    },
+    scrollContent: {
+        paddingBottom: 40,
+    }
+});

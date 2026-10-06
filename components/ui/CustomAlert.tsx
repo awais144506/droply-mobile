@@ -6,6 +6,7 @@ import {
   TouchableOpacity, 
   TouchableWithoutFeedback 
 } from "react-native";
+import { customAlertStyles as styles } from "../style/custom-style";
 
 export interface CustomAlertProps {
   visible: boolean;
@@ -15,7 +16,7 @@ export interface CustomAlertProps {
   cancelText?: string;
   onConfirm: () => void;
   onCancel?: () => void;
-  isDestructive?: boolean; // Turns the confirm button red for Sign Out / Delete actions
+  isDestructive?: boolean;
 }
 
 export function CustomAlert({
@@ -33,27 +34,27 @@ export function CustomAlert({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <TouchableWithoutFeedback onPress={onCancel}>
-        <View className="flex-1 bg-slate-900/40 justify-center items-center px-6">
+        <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-xl">
+            <View style={styles.modalCard}>
               
-              <Text className="text-lg font-bold text-slate-900 text-center mb-2">
+              <Text style={styles.titleText}>
                 {title}
               </Text>
               
-              <Text className="text-sm font-medium text-slate-500 text-center mb-6 leading-relaxed">
+              <Text style={styles.messageText}>
                 {message}
               </Text>
 
-              <View className="flex-row gap-3">
+              <View style={styles.buttonRow}>
                 {/* Render Cancel button only if onCancel is provided */}
                 {onCancel && (
                   <TouchableOpacity
                     onPress={onCancel}
                     activeOpacity={0.7}
-                    className="flex-1 py-3.5 rounded-xl bg-slate-100 items-center justify-center border border-slate-200"
+                    style={styles.cancelButton}
                   >
-                    <Text className="text-sm font-bold text-slate-600">
+                    <Text style={styles.cancelText}>
                       {cancelText || "Cancel"}
                     </Text>
                   </TouchableOpacity>
@@ -62,11 +63,12 @@ export function CustomAlert({
                 <TouchableOpacity
                   onPress={onConfirm}
                   activeOpacity={0.7}
-                  className={`flex-1 py-3.5 rounded-xl items-center justify-center shadow-sm ${
-                    isDestructive ? "bg-rose-600" : "bg-sky-600"
-                  }`}
+                  style={[
+                    styles.confirmButtonBase,
+                    isDestructive ? styles.confirmDestructive : styles.confirmPrimary
+                  ]}
                 >
-                  <Text className="text-sm font-bold text-white">
+                  <Text style={styles.confirmText}>
                     {confirmText}
                   </Text>
                 </TouchableOpacity>

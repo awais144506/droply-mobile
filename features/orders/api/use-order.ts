@@ -14,7 +14,6 @@ export const useRiderOrderData = (branchId: string) => {
     staleTime: 1000 * 60 * 2,
     select: (data): TransformedOrderData => {
       const { zones, branchProducts } = data;
-      console.log(branchProducts.map(p => p.currentStock))
 
       // 1. Zone Options for Select Picker
       const zoneOptions = zones.map((z) => ({

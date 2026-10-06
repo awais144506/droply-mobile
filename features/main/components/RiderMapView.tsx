@@ -5,7 +5,7 @@ import { Pin, LocateFixed, Bike } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
 
 interface RiderMapViewProps {
-    riderLocation: { latitude: number; longitude: number } | null;
+    riderLocation: { latitude: number; longitude: number; heading?: number } | null;
     orders: RiderActiveOrder[];
     selectedOrderId: string | null;
     routeCoordinates: [number, number][];
@@ -25,30 +25,71 @@ export default function RiderMapView({
 }: RiderMapViewProps) {
     const cameraRef = useRef<any>(null);
 
-    // Auto-center when route changes
+    // Boolean to check if we are in active navigation mode
+    const isNavigating = !!selectedOrderId;
+
+    const calculateBearing = (startLat: number, startLng: number, destLat: number, destLng: number) => {
+        const toRad = (deg: number) => (deg * Math.PI) / 180;
+        const toDeg = (rad: number) => (rad * 180) / Math.PI;
+        const dLon = toRad(destLng - startLng);
+        const y = Math.sin(dLon) * Math.cos(toRad(destLat));
+        const x = Math.cos(toRad(startLat)) * Math.sin(toRad(destLat)) - Math.sin(toRad(startLat)) * Math.cos(toRad(destLat)) * Math.cos(dLon);
+        return (toDeg(Math.atan2(y, x)) + 360) % 360;
+    };
+
     useEffect(() => {
-        if (routeCoordinates.length > 0 && cameraRef.current && riderLocation) {
-            const camMethod = cameraRef.current.flyTo || cameraRef.current.setStop;
+        if (cameraRef.current && riderLocation) {
+            const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
+
             if (camMethod) {
-                camMethod.call(cameraRef.current, {
-                    center: [riderLocation.longitude, riderLocation.latitude],
-                    zoom: 13,
-                    duration: 1000
-                });
+                if (isNavigating) {
+                    // 1. Figure out which way to look
+                    let mapHeading = riderLocation.heading || 0;
+
+                    // If we have a route, force the camera to look down the route!
+                    if (routeCoordinates.length > 0) {
+                        const [nextLng, nextLat] = routeCoordinates[0];
+                        mapHeading = calculateBearing(riderLocation.latitude, riderLocation.longitude, nextLat, nextLng);
+                    }
+                    // Navigation Mode: Zoom tight, tilt 60deg, rotate to heading, push camera BEHIND rider
+                    camMethod.call(cameraRef.current, {
+                        centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
+                        zoomLevel: 17.5,
+                        pitch: 60,
+                        heading: mapHeading, // 🔥 Rotates the map so the blue line goes UP
+                        padding: { paddingBottom: 350 },// 🔥 Pushes the rider to the bottom of the screen!
+                        animationDuration: 1000
+                    });
+                } else {
+                    // Normal Mode: Zoom out, flat view, pointing North
+                    camMethod.call(cameraRef.current, {
+                        centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
+                        zoomLevel: 13,
+                        pitch: 0,
+                        heading: 0,
+                        padding: { paddingBottom: 0 }, // Reset padding
+                        animationDuration: 1000
+                    });
+                }
             }
         }
-    }, [routeCoordinates, riderLocation]);
+    }, [isNavigating, riderLocation]);
 
     return (
         <View className="flex-1 relative">
             <Map style={StyleSheet.absoluteFill} mapStyle="https://tiles.openfreemap.org/styles/liberty">
+
+                {/* Clean, strict TypeScript implementation */}
                 <Camera
                     ref={cameraRef}
                     initialViewState={{
                         center: SAHIWAL_CENTER,
-                        zoom: 13
+                        zoom: 13,
+                        pitch: 0,
+                        bearing: 0
                     }}
                 />
+
                 {riderLocation && (
                     <Marker id="rider" lngLat={[riderLocation.longitude, riderLocation.latitude]}>
                         <View className="h-8 w-8 rounded-full bg-slate-900 border-2 border-white items-center justify-center shadow-lg">
@@ -56,6 +97,7 @@ export default function RiderMapView({
                         </View>
                     </Marker>
                 )}
+
                 {orders.map((order, index) => {
                     if (!order.customer.longitude || !order.customer.latitude) return null;
                     const isSelected = order.id === selectedOrderId;
@@ -75,6 +117,7 @@ export default function RiderMapView({
                         </Marker>
                     );
                 })}
+
                 {routeCoordinates.length > 0 && (
                     <GeoJSONSource
                         id="routeSource"
@@ -86,10 +129,24 @@ export default function RiderMapView({
             </Map>
 
             <TouchableOpacity
-                onPress={onRecenter}
-                className="absolute right-4 bottom-32 bg-white p-3 rounded-full shadow-xl border border-slate-100"
+                onPress={() => {
+                    onRecenter();
+                    if (cameraRef.current && riderLocation) {
+                        const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
+                        if (camMethod) {
+                            camMethod.call(cameraRef.current, {
+                                center: [riderLocation.longitude, riderLocation.latitude],
+                                zoom: isNavigating ? 17 : 13,
+                                pitch: isNavigating ? 60 : 0,
+                                bearing: isNavigating ? (riderLocation.heading || 0) : 0,
+                                duration: 500
+                            });
+                        }
+                    }
+                }}
+                className="absolute bottom-25 bg-slate-800 p-3 rounded-full shadow-xl"
             >
-                <LocateFixed size={22} color="#475569" />
+                <LocateFixed size={22} color="#ffffff" />
             </TouchableOpacity>
         </View>
     );

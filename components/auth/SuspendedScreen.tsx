@@ -1,6 +1,6 @@
 // src/components/auth/SuspendedScreen.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { ShieldAlert, LogOut, Building2, UserX, MapPin, Mail, MessageCircle } from 'lucide-react-native';
@@ -23,60 +23,60 @@ export default function SuspendedScreen() {
     };
 
     const handleWhatsApp = () => {
-        Linking.openURL('https://wa.me/923000000000');
+        Linking.openURL('https://wa.me/923116631476');
     };
     const handleEmail = () => {
         Linking.openURL('mailto:help@dedroply.pk');
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50 justify-center px-6">
-            <View className="items-center mb-8 mt-10">
-                <View className="h-24 w-24 bg-rose-100 rounded-full items-center justify-center mb-6 shadow-sm">
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.headerContainer}>
+                <View style={styles.iconCircle}>
                     <UserX size={48} color="#e11d48" strokeWidth={1.5} />
                 </View>
-                <Text className="text-3xl font-extrabold text-slate-900 text-center mb-2">
+                <Text style={styles.titleText}>
                     Access Suspended
                 </Text>
-                <Text className="text-base text-slate-500 text-center px-4 leading-relaxed">
+                <Text style={styles.subtitleText}>
                     Hi {userName.split(' ')[0]}, your {role.toLowerCase()} account has been temporarily suspended.
                 </Text>
             </View>
 
-            <View className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 mb-6">
-                <View className="flex-row items-center gap-3 mb-4 border-b border-slate-100 pb-4">
-                    <View className="h-10 w-10 bg-slate-100 rounded-xl items-center justify-center">
+            <View style={styles.card}>
+                <View style={styles.cardRow}>
+                    <View style={styles.cardIconWrapper}>
                         <ShieldAlert size={20} color="#64748b" />
                     </View>
                     <View>
-                        <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Status</Text>
-                        <Text className="text-base font-bold text-rose-600">Suspended</Text>
+                        <Text style={styles.cardLabel}>Account Status</Text>
+                        <Text style={styles.statusText}>Suspended</Text>
                     </View>
                 </View>
 
                 {/* Show branch info if applicable */}
                 {branchId && (
-                    <View className="flex-row items-start gap-3 mb-4 border-b border-slate-100 pb-4">
-                        <View className="h-10 w-10 bg-slate-100 rounded-xl items-center justify-center">
+                    <View style={[styles.cardRow, styles.alignStart]}>
+                        <View style={styles.cardIconWrapper}>
                             <Building2 size={20} color="#64748b" />
                         </View>
-                        <View className="flex-1 justify-center min-h-[40px]">
-                            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Assigned Branch</Text>
+                        <View style={styles.branchInfoWrapper}>
+                            <Text style={styles.cardLabelMargin}>Assigned Branch</Text>
 
                             {isLoading ? (
-                                <View className="flex-row items-center mt-1">
+                                <View style={styles.loadingRow}>
                                     <ActivityIndicator size="small" color="#94a3b8" />
-                                    <Text className="ml-2 text-sm text-slate-500">Loading details...</Text>
+                                    <Text style={styles.loadingText}>Loading details...</Text>
                                 </View>
                             ) : (
                                 <View>
-                                    <Text className="text-base font-bold text-slate-800" numberOfLines={1}>
+                                    <Text style={styles.branchName} numberOfLines={1}>
                                         {branch?.displayName || branchId}
                                     </Text>
                                     {branch?.displayAddress && (
-                                        <View className="flex-row items-center mt-1.5 gap-1.5">
+                                        <View style={styles.addressRow}>
                                             <MapPin size={12} color="#94a3b8" />
-                                            <Text className="text-xs text-slate-500 flex-1" numberOfLines={2}>
+                                            <Text style={styles.addressText} numberOfLines={2}>
                                                 {branch.displayAddress}
                                             </Text>
                                         </View>
@@ -87,42 +87,242 @@ export default function SuspendedScreen() {
                     </View>
                 )}
 
-                <Text className="text-sm font-medium text-slate-800 mb-3">Need Help?</Text>
-                <Text className="text-xs text-slate-500 leading-relaxed mb-4">
+                <Text style={styles.helpTitle}>Need Help?</Text>
+                <Text style={styles.helpDesc}>
                     If you believe this is a mistake, or if your subscription payment is pending, please contact your branch manager or reach out to Droply Admin directly.
                 </Text>
 
-                <View className="flex-row gap-3">
+                <View style={styles.actionRow}>
                     <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={handleWhatsApp}
-                        className="flex-1 bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl py-3 flex-row items-center justify-center gap-2"
+                        style={styles.whatsappBtn}
                     >
                         <MessageCircle size={18} color="#16a34a" />
-                        <Text className="text-[#16a34a] font-bold text-sm">WhatsApp</Text>
+                        <Text style={styles.whatsappText}>WhatsApp</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={handleEmail}
-                        className="flex-1 bg-sky-50 border border-sky-100 rounded-xl py-3 flex-row items-center justify-center gap-2"
+                        style={styles.emailBtn}
                     >
                         <Mail size={18} color="#0284c7" />
-                        <Text className="text-sky-700 font-bold text-sm">Email Us</Text>
+                        <Text style={styles.emailText}>Email Us</Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <View className="mt-auto mb-6">
+            <View style={styles.footer}>
                 <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={handleLogout}
-                    className="w-full h-14 bg-slate-900 rounded-xl items-center justify-center flex-row gap-2 shadow-md"
+                    style={styles.logoutBtn}
                 >
                     <LogOut size={20} color="#ffffff" />
-                    <Text className="text-white text-base font-bold">Sign Out</Text>
+                    <Text style={styles.logoutText}>Sign Out</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#f8fafc', // bg-slate-50
+        justifyContent: 'center',
+        paddingHorizontal: 24, // px-6
+    },
+    headerContainer: {
+        alignItems: 'center',
+        marginBottom: 32, // mb-8
+        marginTop: 40, // mt-10
+    },
+    iconCircle: {
+        height: 96, // h-24
+        width: 96, // w-24
+        backgroundColor: '#ffe4e6', // rose-100
+        borderRadius: 48, // rounded-full
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24, // mb-6
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1, // shadow-sm
+    },
+    titleText: {
+        fontSize: 30, // text-3xl
+        fontWeight: '800', // font-extrabold
+        color: '#0f172a', // slate-900
+        textAlign: 'center',
+        marginBottom: 8, // mb-2
+    },
+    subtitleText: {
+        fontSize: 16, // text-base
+        color: '#64748b', // slate-500
+        textAlign: 'center',
+        paddingHorizontal: 16, // px-4
+        lineHeight: 24, // leading-relaxed
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16, // rounded-2xl
+        padding: 20, // p-5
+        marginBottom: 24, // mb-6
+        borderWidth: 1,
+        borderColor: '#e2e8f0', // border-slate-200
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1, // shadow-sm
+    },
+    cardRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12, // gap-3
+        marginBottom: 16, // mb-4
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9', // border-slate-100
+        paddingBottom: 16, // pb-4
+    },
+    alignStart: {
+        alignItems: 'flex-start',
+    },
+    cardIconWrapper: {
+        height: 40, // h-10
+        width: 40, // w-10
+        backgroundColor: '#f1f5f9', // bg-slate-100
+        borderRadius: 12, // rounded-xl
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardLabel: {
+        fontSize: 12, // text-xs
+        fontWeight: '700', // font-bold
+        color: '#94a3b8', // slate-400
+        textTransform: 'uppercase',
+        letterSpacing: 1, // tracking-wider
+    },
+    cardLabelMargin: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#94a3b8',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 2, // mb-0.5
+    },
+    statusText: {
+        fontSize: 16, // text-base
+        fontWeight: '700',
+        color: '#e11d48', // rose-600
+    },
+    branchInfoWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: 40,
+    },
+    loadingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4, // mt-1
+    },
+    loadingText: {
+        marginLeft: 8, // ml-2
+        fontSize: 14, // text-sm
+        color: '#64748b', // slate-500
+    },
+    branchName: {
+        fontSize: 16, // text-base
+        fontWeight: '700',
+        color: '#1e293b', // slate-800
+    },
+    addressRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6, // mt-1.5
+        gap: 6, // gap-1.5
+    },
+    addressText: {
+        fontSize: 12, // text-xs
+        color: '#64748b', // slate-500
+        flex: 1,
+    },
+    helpTitle: {
+        fontSize: 14, // text-sm
+        fontWeight: '500', // font-medium
+        color: '#1e293b', // slate-800
+        marginBottom: 12, // mb-3
+    },
+    helpDesc: {
+        fontSize: 12, // text-xs
+        color: '#64748b', // slate-500
+        lineHeight: 20, // leading-relaxed
+        marginBottom: 16, // mb-4
+    },
+    actionRow: {
+        flexDirection: 'row',
+        gap: 12, // gap-3
+    },
+    whatsappBtn: {
+        flex: 1,
+        backgroundColor: 'rgba(37, 211, 102, 0.1)', // #25D366/10
+        borderWidth: 1,
+        borderColor: 'rgba(37, 211, 102, 0.2)', // #25D366/20
+        borderRadius: 12, // rounded-xl
+        paddingVertical: 12, // py-3
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8, // gap-2
+    },
+    whatsappText: {
+        color: '#16a34a',
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    emailBtn: {
+        flex: 1,
+        backgroundColor: '#f0f9ff', // sky-50
+        borderWidth: 1,
+        borderColor: '#e0f2fe', // sky-100
+        borderRadius: 12,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    emailText: {
+        color: '#0369a1', // sky-700
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    footer: {
+        marginTop: 'auto',
+        marginBottom: 24, // mb-6
+    },
+    logoutBtn: {
+        width: '100%',
+        height: 56, // h-14
+        backgroundColor: '#0f172a', // slate-900
+        borderRadius: 12, // rounded-xl
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3, // shadow-md
+    },
+    logoutText: {
+        color: '#ffffff',
+        fontSize: 16, // text-base
+        fontWeight: '700', // font-bold
+    }
+});

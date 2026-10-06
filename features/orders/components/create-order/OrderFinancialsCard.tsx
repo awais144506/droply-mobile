@@ -3,6 +3,7 @@ import { View, Text, TextInput } from "react-native";
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { Receipt, Tag, Truck, Banknote } from "lucide-react-native";
 import { NewOrderFormData } from "../../schema/order-schema";
+import { financialsCardStyles as styles } from "../../style/order-style"; // Adjust path if needed
 
 export default function OrderFinancialsCard({ data }: { data: any }) {
   const { control } = useFormContext<NewOrderFormData>();
@@ -18,7 +19,7 @@ export default function OrderFinancialsCard({ data }: { data: any }) {
 
   // 1. Calculate the subtotal of the cart
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
+
   // 2. Calculate the current order's final price
   const currentOrderTotal = Math.max(0, subtotal + Number(deliveryCharges) - Number(discountAmount));
 
@@ -30,39 +31,39 @@ export default function OrderFinancialsCard({ data }: { data: any }) {
   const amountToCollect = currentOrderTotal + (previousDebt > 0 ? previousDebt : 0);
 
   return (
-    <View className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm mb-4">
-      <View className="flex-row items-center gap-2 mb-5">
+    <View style={styles.cardBase}>
+      <View style={styles.headerRow}>
         <Receipt size={16} color="#64748b" />
-        <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Financial Summary</Text>
+        <Text style={styles.headerText}>Financial Summary</Text>
       </View>
 
-      <View className="gap-4">
-        
+      <View style={styles.rowsContainer}>
+
         {/* Subtotal Row */}
-        <View className="flex-row items-center justify-between px-1">
-          <Text className="text-sm font-semibold text-slate-500">Cart Subtotal</Text>
-          <Text className="text-sm font-bold text-slate-900">Rs. {subtotal}</Text>
+        <View style={styles.standardRow}>
+          <Text style={styles.subtotalLabel}>Cart Subtotal</Text>
+          <Text style={styles.subtotalValue}>Rs. {subtotal}</Text>
         </View>
 
         {/* Delivery Charges Input */}
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-2">
+        <View style={styles.inputRow}>
+          <View style={styles.labelGroup}>
             <Truck size={14} color="#64748b" />
-            <Text className="text-sm font-semibold text-slate-700">Delivery</Text>
+            <Text style={styles.inputLabel}>Delivery</Text>
           </View>
           <Controller
             control={control}
             name="deliveryCharges"
             render={({ field: { onChange, value } }) => (
-              <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-lg px-3 h-10 w-28">
-                <Text className="text-xs font-bold text-slate-400 mr-1">Rs.</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputPrefix}>Rs.</Text>
                 <TextInput
                   keyboardType="number-pad"
                   value={value === 0 ? "" : String(value)}
                   onChangeText={(text) => onChange(text ? parseInt(text, 10) : 0)}
                   placeholder="0"
                   placeholderTextColor="#94a3b8"
-                  className="flex-3 text-sm font-bold text-slate-900 text-right h-full m-2 p-2"
+                  style={styles.inputField}
                 />
               </View>
             )}
@@ -70,60 +71,60 @@ export default function OrderFinancialsCard({ data }: { data: any }) {
         </View>
 
         {/* Discount Input */}
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-2">
+        <View style={styles.inputRow}>
+          <View style={styles.labelGroup}>
             <Tag size={14} color="#64748b" />
-            <Text className="text-sm font-semibold text-slate-700">Discount</Text>
+            <Text style={styles.inputLabel}>Discount</Text>
           </View>
           <Controller
             control={control}
             name="discountAmount"
             render={({ field: { onChange, value } }) => (
-              <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-lg px-3 h-10 w-28">
-                <Text className="text-xs font-bold text-slate-400 mr-1">- Rs.</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputPrefix}>- Rs.</Text>
                 <TextInput
                   keyboardType="number-pad"
                   value={value === 0 ? "" : String(value)}
                   onChangeText={(text) => onChange(text ? parseInt(text, 10) : 0)}
                   placeholder="0"
                   placeholderTextColor="#94a3b8"
-                  className="flex-3 text-sm font-bold text-slate-900 text-right h-full m-2 p-2"
+                  style={styles.inputField}
                 />
               </View>
             )}
           />
         </View>
 
-        <View className="h-[1px] w-full bg-slate-100 my-1" />
+        <View style={styles.divider} />
 
         {/* Current Order Total */}
-        <View className="flex-row items-center justify-between px-1">
-          <Text className="text-sm font-bold text-slate-800">Current Order</Text>
-          <Text className="text-sm font-extrabold text-slate-900">Rs. {currentOrderTotal}</Text>
+        <View style={styles.standardRow}>
+          <Text style={styles.currentOrderLabel}>Current Order</Text>
+          <Text style={styles.currentOrderValue}>Rs. {currentOrderTotal}</Text>
         </View>
 
         {/* Previous Debt (Only shows if they owe money) */}
         {previousDebt > 0 && (
-          <View className="flex-row items-center justify-between px-1">
-            <Text className="text-sm font-bold text-rose-600">Previous Outstanding</Text>
-            <Text className="text-sm font-extrabold text-rose-600">+ Rs. {previousDebt}</Text>
+          <View style={styles.standardRow}>
+            <Text style={styles.debtLabel}>Previous Outstanding</Text>
+            <Text style={styles.debtValue}>+ Rs. {previousDebt}</Text>
           </View>
         )}
 
       </View>
 
       {/* GRAND TOTAL COLLECTABLE BLOCK */}
-      <View className="mt-7 bg-sky-50 p-4 rounded-2xl border border-sky-200 flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <View className="h-8 w-8 bg-sky-100 rounded-lg items-center justify-center">
+      <View style={styles.grandTotalBox}>
+        <View style={styles.grandTotalLeft}>
+          <View style={styles.grandTotalIconWrapper}>
             <Banknote size={16} color="#0369a1" />
           </View>
           <View>
-            <Text className="text-[10px] font-bold text-sky-600 uppercase tracking-wider">Amount to Collect</Text>
-            <Text className="text-[10px] text-sky-600/70 font-medium leading-tight">Order + Debt</Text>
+            <Text style={styles.grandTotalLabel}>Amount to Collect</Text>
+            <Text style={styles.grandTotalSub}>Order + Debt</Text>
           </View>
         </View>
-        <Text className="text-2xl font-black text-sky-800">
+        <Text style={styles.grandTotalValue}>
           Rs. {amountToCollect}
         </Text>
       </View>

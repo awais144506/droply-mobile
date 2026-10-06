@@ -6,6 +6,7 @@ import * as ImagePicker from "expo-image-picker";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import { useRole } from '@/lib/use-role';
 import { useRouter } from 'expo-router';
+import { profileDetailsStyles as styles } from '../style/profile-styles'; // Adjust path if needed
 
 export const ProfileDetails = () => {
     const { user } = useUser();
@@ -91,17 +92,17 @@ export const ProfileDetails = () => {
     };
 
     return (
-        <View className="mb-4 mt-2">
+        <View style={styles.container}>
             {/* Main Info Card */}
-            <View className="bg-white rounded-[32px] p-6 items-center shadow-sm mb-4">
+            <View style={styles.mainCard}>
 
                 {/* Standard Avatar Layout (No Absolute Floating) */}
-                <View className="relative mb-4">
-                    <View className="h-24 w-24 rounded-full bg-slate-50 border-4 border-slate-50 overflow-hidden items-center justify-center">
+                <View style={styles.avatarContainer}>
+                    <View style={styles.avatarWrapper}>
                         {userProfilePicture || user?.hasImage ? (
                             <Image
                                 source={{ uri: userProfilePicture || user?.imageUrl }}
-                                style={{ width: 96, height: 96 }}
+                                style={styles.avatarImage}
                                 resizeMode="cover"
                             />
                         ) : (
@@ -114,7 +115,7 @@ export const ProfileDetails = () => {
                         onPress={handleChangeAvatar}
                         disabled={isUploading}
                         activeOpacity={0.8}
-                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-sky-500 border-2 border-white items-center justify-center shadow-md active:bg-sky-600"
+                        style={styles.cameraButton}
                     >
                         {isUploading ? (
                             <ActivityIndicator size="small" color="#ffffff" />
@@ -125,23 +126,23 @@ export const ProfileDetails = () => {
                 </View>
 
                 {/* Name */}
-                <Text className="text-xl font-extrabold text-slate-900 text-center tracking-tight mb-2">
+                <Text style={styles.nameText}>
                     {userName || "XYZ"}
                 </Text>
 
                 {/* Badges */}
-                <View className="flex-row items-center justify-center gap-2">
-                    <View className="flex-row items-center gap-1.5 bg-sky-50 px-3 py-1.5 rounded-full">
+                <View style={styles.badgesContainer}>
+                    <View style={styles.roleBadge}>
                         <Bike size={12} color="#0284c7" strokeWidth={2.5} />
-                        <Text className="text-[11px] font-bold text-sky-700 uppercase tracking-wider">
+                        <Text style={styles.roleBadgeText}>
                             {role}
                         </Text>
                     </View>
 
-                    <View className="flex-row items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full">
+                    <View style={styles.statusBadge}>
                         <CheckCircle2 size={12} color="#16a34a" strokeWidth={2.5} />
-                        <Text className="text-[11px] font-bold text-emerald-700">
-                            Active on Duty
+                        <Text style={styles.statusBadgeText}>
+                            Online
                         </Text>
                     </View>
                 </View>
@@ -151,10 +152,10 @@ export const ProfileDetails = () => {
             <TouchableOpacity
                 onPress={handleSignOut}
                 activeOpacity={0.7}
-                className="flex-row items-center justify-center gap-3 bg-white py-4 rounded-[20px] active:bg-rose-50 shadow-sm"
+                style={styles.logoutButton}
             >
                 <LogOut size={18} color="#e11d48" strokeWidth={2.5} />
-                <Text className="text-sm font-bold text-rose-600">Log Out</Text>
+                <Text style={styles.logoutText}>Log Out</Text>
             </TouchableOpacity>
 
             <CustomAlert {...alertConfig} />

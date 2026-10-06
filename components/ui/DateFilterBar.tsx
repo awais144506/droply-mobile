@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { CalendarDays } from 'lucide-react-native';
-import { CustomDatePickerModal } from './CustomDatePickerModal';
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export type DateFilterType = 'today' | 'tomorrow' | 'custom';
 
@@ -18,7 +18,18 @@ export function DateFilterBar({
   onFilterChange,
   hideTomorrow = false
 }: DateFilterBarProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    // On Android, the picker closes automatically upon selection or dismissal
+    if (Platform.OS === 'android') {
+      setShowPicker(false);
+    }
+
+    if (event.type === 'set' && selectedDate) {
+      onFilterChange('custom', selectedDate);
+    }
+  };
 
   return (
     <View style={{ marginBottom: 16, marginTop: 8 }}>
@@ -79,7 +90,7 @@ export function DateFilterBar({
 
         {/* Custom Date Button */}
         <TouchableOpacity
-          onPress={() => setIsModalOpen(true)}
+          onPress={() => setShowPicker(true)}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -106,13 +117,15 @@ export function DateFilterBar({
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Pure JS Modal Calendar */}
-      <CustomDatePickerModal
-        visible={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        selectedDate={customDate}
-        onSelectDate={(date) => onFilterChange('custom', date)}
-      />
+      {/* Native Android / iOS Date Picker Dialog */}
+      {showPicker && (
+        <DateTimePicker
+          value={customDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
     </View>
   );
 }

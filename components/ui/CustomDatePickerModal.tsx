@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { X } from 'lucide-react-native';
 import { format } from 'date-fns';
@@ -21,13 +21,13 @@ export function CustomDatePickerModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/60 justify-center items-center px-4">
-        <View className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-100">
+      <View style={styles.overlay}>
+        <View style={styles.modalContent}>
           
           {/* Header */}
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-base font-extrabold text-slate-900">Select Date</Text>
-            <TouchableOpacity onPress={onClose} className="p-1.5 rounded-full bg-slate-100">
+          <View style={styles.header}>
+            <Text style={styles.title}>Select Date</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <X size={18} color="#64748b" />
             </TouchableOpacity>
           </View>
@@ -35,7 +35,7 @@ export function CustomDatePickerModal({
           {/* Calendar Component (Pure JS - No Native Crashes!) */}
           <Calendar
             current={formattedCurrent}
-            onDayPress={(day) => {
+            onDayPress={(day: any) => {
               const newDate = new Date(day.timestamp);
               onSelectDate(newDate);
               onClose();
@@ -67,3 +67,44 @@ export function CustomDatePickerModal({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // bg-black/60
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16, // px-4
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    width: '100%',
+    maxWidth: 384, // max-w-sm
+    borderRadius: 24, // rounded-3xl
+    padding: 24, // p-6
+    borderWidth: 1,
+    borderColor: '#f1f5f9', // border-slate-100
+    // shadow-2xl equivalent
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 25 },
+    shadowOpacity: 0.25,
+    shadowRadius: 50,
+    elevation: 20, 
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16, // mb-4
+  },
+  title: {
+    fontSize: 16, // text-base
+    fontWeight: '800', // font-extrabold
+    color: '#0f172a', // slate-900
+  },
+  closeButton: {
+    padding: 6, // p-1.5
+    borderRadius: 9999, // rounded-full
+    backgroundColor: '#f1f5f9', // slate-100
+  }
+});

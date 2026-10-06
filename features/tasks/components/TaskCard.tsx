@@ -8,6 +8,7 @@ import {
   User
 } from "lucide-react-native";
 import { Task } from "@/features/tasks/types/task";
+import { taskCardStyle as styles } from "../style/task-styles";
 
 interface TaskCardProps {
   task: Task;
@@ -27,12 +28,12 @@ export const TaskCard = ({ task, onToggle }: TaskCardProps) => {
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() => onToggle(task.id)}
-      className={`p-4 rounded-2xl border mb-3 flex-row items-start gap-3 shadow-sm ${isCompleted
-        ? "bg-slate-50 border-slate-200 opacity-70"
-        : "bg-white border-slate-200"
-        }`}
+      style={[
+        styles.cardBase,
+        isCompleted ? styles.cardCompleted : styles.cardIncomplete
+      ]}
     >
-      <View className="pt-0.5">
+      <View style={styles.iconWrapper}>
         {isCompleted ? (
           <CheckCircle2 size={24} color="#10b981" />
         ) : (
@@ -40,43 +41,52 @@ export const TaskCard = ({ task, onToggle }: TaskCardProps) => {
         )}
       </View>
 
-      <View className="flex-1">
-        {/* 🔥 Removed the generic title so the actual description is the focal point */}
+      <View style={styles.contentWrapper}>
         <Text
-          className={`text-base font-bold leading-snug ${isCompleted ? "text-slate-400 line-through" : "text-slate-800"
-            }`}
+          style={[
+            styles.descriptionBase,
+            isCompleted ? styles.descriptionCompleted : styles.descriptionIncomplete
+          ]}
         >
           {task.description}
         </Text>
 
         {/* Footer Meta & Timestamps */}
-        <View className="mt-3 pt-3 border-t border-slate-100 flex-row items-center justify-between">
+        <View style={styles.footer}>
 
-          {/* 🔥 Restructured Assigner block for better visibility */}
-          <View className="flex-row items-center gap-2">
-            <View className={`p-1.5 rounded-lg ${isCompleted ? "bg-slate-200" : "bg-sky-50"}`}>
+          {/* Assigner block */}
+          <View style={styles.assignerBlock}>
+            <View
+              style={[
+                styles.assignerIconWrapperBase,
+                isCompleted ? styles.assignerIconCompleted : styles.assignerIconIncomplete
+              ]}
+            >
               <User size={14} color={isCompleted ? "#94a3b8" : "#0284c7"} />
             </View>
+
             <View>
               <Text
-                className={`text-xs font-bold ${isCompleted ? "text-slate-400" : "text-slate-700"
-                  }`}
+                style={[
+                  styles.assignerTextBase,
+                  isCompleted ? styles.assignerTextCompleted : styles.assignerTextIncomplete
+                ]}
                 numberOfLines={1}
               >
                 By: {task.assignedByName}
               </Text>
 
-              {/* Extracted the role into a proper visual badge */}
-              <View
-                className={`self-start p-0.5 rounded-md mt-0.5`}
-              >
+              {/* Role Badge */}
+              <View style={styles.roleBadgeWrapper}>
                 <Text
-                  className={`text-[9px] font-bold uppercase tracking-wider ${isCompleted
-                    ? "text-slate-400"
-                    : task.assignedByRole === "OWNER"
-                      ? "text-amber-600"
-                      : "text-indigo-600"
-                    }`}
+                  style={[
+                    styles.roleTextBase,
+                    isCompleted
+                      ? styles.roleTextCompleted
+                      : task.assignedByRole === "OWNER"
+                        ? styles.roleTextOwner
+                        : styles.roleTextOther
+                  ]}
                 >
                   {task.assignedByRole}
                 </Text>
@@ -85,18 +95,18 @@ export const TaskCard = ({ task, onToggle }: TaskCardProps) => {
           </View>
 
           {/* Timestamp Tracker */}
-          <View className="flex-row items-center gap-1">
+          <View style={styles.timeBlock}>
             {isCompleted && task.completedAt ? (
               <>
                 <CheckCheck size={14} color="#10b981" />
-                <Text className="text-[10px] font-bold text-emerald-600">
+                <Text style={styles.timeTextDone}>
                   Done {formatTime(task.completedAt)}
                 </Text>
               </>
             ) : (
               <>
                 <Clock size={14} color="#94a3b8" />
-                <Text className="text-[10px] font-bold text-slate-400">
+                <Text style={styles.timeTextPending}>
                   {formatTime(task.createdAt)}
                 </Text>
               </>
@@ -106,4 +116,5 @@ export const TaskCard = ({ task, onToggle }: TaskCardProps) => {
       </View>
     </TouchableOpacity>
   );
-}
+};
+

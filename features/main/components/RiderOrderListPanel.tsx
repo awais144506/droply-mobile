@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flexShrink: 1,
+    maxHeight: SCREEN_HEIGHT * 0.35,
     backgroundColor: '#f8fafc', // slate-50
   },
   scrollContent: {

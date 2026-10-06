@@ -5,6 +5,7 @@ import { PackageSearch, PlusCircle, Trash2, AlertCircle, ShoppingCart } from "lu
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { NewOrderFormData } from "../../schema/order-schema";
 import { useOfflineOrderStore } from "@/store/seOfflineOrderStore";
+import { productCartStyles as styles } from "../../style/order-style"; // Adjust path if needed
 
 export default function OrderProductCart({ data }: { data: any }) {
     const { control, setValue } = useFormContext<NewOrderFormData>();
@@ -37,7 +38,7 @@ export default function OrderProductCart({ data }: { data: any }) {
         ? derivedProductOptions.find((p: any) => p.id === selectedProductId)
         : null;
 
-    // 🔥 3. Live Math for the UI (Calculates as they type)
+    // Live Math for the UI (Calculates as they type)
     const requestedQty = parseFloat(quantityText) || 0;
     const existingItemIndex = selectedProduct ? cartItems.findIndex((item) => item.productId === selectedProduct.id) : -1;
     const existingQty = existingItemIndex >= 0 ? cartItems[existingItemIndex].quantity : 0;
@@ -91,18 +92,18 @@ export default function OrderProductCart({ data }: { data: any }) {
     };
 
     return (
-        <View className="mb-4">
+        <View style={styles.container}>
             {/* ADD PRODUCT BLOCK */}
-            <View className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm z-50">
-                <View className="flex-row items-center gap-2 mb-4">
+            <View style={[styles.cardBase, styles.addProductCard]}>
+                <View style={styles.headerRow}>
                     <PackageSearch size={16} color="#4922dd" />
-                    <Text className="text-[11px] text-slate-800 font-bold uppercase tracking-wider">Add Products</Text>
+                    <Text style={styles.headerText}>Add Products</Text>
                 </View>
 
                 <SearchableSelect
                     label="Select Product"
                     placeholder="Search inventory..."
-                    options={derivedProductOptions} // 🔥 Pass the derived options here
+                    options={derivedProductOptions}
                     selectedValue={selectedProductId}
                     onSelect={(id) => {
                         setSelectedProductId(id);
@@ -113,15 +114,17 @@ export default function OrderProductCart({ data }: { data: any }) {
 
                 {/* Dynamic Stock & Price Info */}
                 {selectedProduct && (
-                    <View className="mt-3 flex-row items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <View style={styles.stockInfoBox}>
                         <View>
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase">Sale Price</Text>
-                            <Text className="text-sm font-extrabold text-slate-800">Rs. {selectedProduct.price}</Text>
+                            <Text style={styles.stockLabel}>Sale Price</Text>
+                            <Text style={styles.priceValue}>Rs. {selectedProduct.price}</Text>
                         </View>
-                        <View className="items-end">
-                            {/* 🔥 Live Remaining Stock UI */}
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase">Remaining Stock</Text>
-                            <Text className={`text-sm font-extrabold ${liveRemainingStock >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                        <View style={styles.stockRightBlock}>
+                            <Text style={styles.stockLabel}>Remaining Stock</Text>
+                            <Text style={[
+                                styles.stockValueBase,
+                                liveRemainingStock >= 0 ? styles.stockGood : styles.stockBad
+                            ]}>
                                 {liveRemainingStock} ({selectedProduct.unit.toLowerCase()})
                             </Text>
                         </View>
@@ -129,9 +132,9 @@ export default function OrderProductCart({ data }: { data: any }) {
                 )}
 
                 {/* Decimal Quantity Input */}
-                <View className="mt-4 flex-row gap-3">
-                    <View className="flex-1 justify-center">
-                        <Text className="text-xs font-bold text-slate-700 mb-1.5 ml-1">Quantity</Text>
+                <View style={styles.inputRow}>
+                    <View style={styles.qtyInputBlock}>
+                        <Text style={styles.qtyLabel}>Quantity</Text>
                         <TextInput
                             value={quantityText}
                             onChangeText={(text) => {
@@ -141,22 +144,39 @@ export default function OrderProductCart({ data }: { data: any }) {
                             keyboardType="decimal-pad"
                             placeholder="0.0"
                             editable={!!selectedProduct}
-                            className={`h-12 bg-slate-50 border rounded-xl px-4 text-base font-bold text-slate-900 ${!selectedProduct ? "opacity-50 border-slate-200" : (errorMsg || liveRemainingStock < 0) ? "border-rose-400 bg-rose-50/50 text-rose-700" : "border-slate-200"
-                                }`}
+                            style={[
+                                styles.qtyInputBase,
+                                !selectedProduct
+                                    ? styles.qtyInputDisabled
+                                    : (errorMsg || liveRemainingStock < 0)
+                                        ? styles.qtyInputError
+                                        : styles.qtyInputNormal
+                            ]}
+                            placeholderTextColor="#94a3b8"
                         />
                     </View>
 
-                    <View className="justify-end">
+                    <View style={styles.addBtnBlock}>
                         <TouchableOpacity
                             onPress={handleAddToCart}
                             disabled={!selectedProduct || liveRemainingStock < 0 || selectedProduct.stock <= 0}
-                            className={`h-12 px-6 rounded-xl items-center justify-center flex-row gap-2 ${selectedProduct && liveRemainingStock >= 0 && selectedProduct.stock > 0
-                                ? "bg-slate-900 active:bg-slate-800"
-                                : "bg-slate-200"
-                                }`}
+                            style={[
+                                styles.addBtnBase,
+                                (selectedProduct && liveRemainingStock >= 0 && selectedProduct.stock > 0)
+                                    ? styles.addBtnActive
+                                    : styles.addBtnInactive
+                            ]}
                         >
-                            <PlusCircle size={16} color={selectedProduct && liveRemainingStock >= 0 && selectedProduct.stock > 0 ? "#ffffff" : "#94a3b8"} />
-                            <Text className={`text-sm font-bold ${selectedProduct && liveRemainingStock >= 0 && selectedProduct.stock > 0 ? "text-white" : "text-slate-400"}`}>
+                            <PlusCircle 
+                                size={16} 
+                                color={(selectedProduct && liveRemainingStock >= 0 && selectedProduct.stock > 0) ? "#ffffff" : "#94a3b8"} 
+                            />
+                            <Text style={[
+                                styles.addBtnTextBase,
+                                (selectedProduct && liveRemainingStock >= 0 && selectedProduct.stock > 0)
+                                    ? styles.addBtnTextActive
+                                    : styles.addBtnTextInactive
+                            ]}>
                                 Add
                             </Text>
                         </TouchableOpacity>
@@ -165,40 +185,41 @@ export default function OrderProductCart({ data }: { data: any }) {
 
                 {/* Error Message */}
                 {errorMsg ? (
-                    <View className="flex-row items-center gap-1.5 mt-3 bg-rose-50 p-2.5 rounded-lg border border-rose-100">
+                    <View style={styles.errorBox}>
                         <AlertCircle size={14} color="#e11d48" />
-                        <Text className="text-xs font-semibold text-rose-600 flex-1">{errorMsg}</Text>
+                        <Text style={styles.errorText}>{errorMsg}</Text>
                     </View>
                 ) : null}
             </View>
 
             {/* ACTIVE CART ITEMS BLOCK */}
             {cartItems.length > 0 && (
-                <View className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm mt-4 z-0">
-                    <View className="flex-row items-center gap-2 mb-4">
+                <View style={[styles.cardBase, styles.cartListCard]}>
+                    <View style={styles.headerRow}>
                         <ShoppingCart size={16} color="#d42b7c" />
-                        <Text className="text-[11px] text-slate-800 font-bold uppercase tracking-wider">Current Order</Text>
+                        <Text style={styles.headerText}>Current Order</Text>
                     </View>
 
-                    <View className="gap-2.5">
+                    <View style={styles.cartListContainer}>
                         {cartItems.map((item, index) => (
-                            <View key={`${item.productId}-${index}`} className="flex-row items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-                                <View className="flex-1 pr-3">
-                                    <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>
+                            <View key={`${item.productId}-${index}`} style={styles.cartItemRow}>
+                                <View style={styles.cartItemInfo}>
+                                    <Text style={styles.cartItemName} numberOfLines={1}>
                                         {item.name}
                                     </Text>
-                                    <Text className="text-xs font-semibold text-slate-500 mt-0.5">
+                                    <Text style={styles.cartItemSub}>
                                         {item.quantity} x Rs. {item.price}
                                     </Text>
                                 </View>
 
-                                <View className="flex-row items-center gap-4">
-                                    <Text className="text-sm font-extrabold text-sky-700">
+                                <View style={styles.cartItemRight}>
+                                    <Text style={styles.cartItemTotal}>
                                         Rs. {item.quantity * item.price}
                                     </Text>
                                     <TouchableOpacity
                                         onPress={() => handleRemoveItem(item.productId)}
-                                        className="h-9 w-9 bg-rose-50 rounded-xl items-center justify-center border border-rose-100 active:bg-rose-100"
+                                        style={styles.deleteBtn}
+                                        activeOpacity={0.7}
                                     >
                                         <Trash2 size={16} color="#e11d48" />
                                     </TouchableOpacity>

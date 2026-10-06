@@ -4,6 +4,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { CalendarDays } from "lucide-react-native";
 import { NewOrderFormData } from "../../schema/order-schema";
+import { scheduleCardStyles as styles } from "../../style/order-style"; // Adjust path if needed
 
 export default function OrderScheduleCard() {
   const { setValue, control } = useFormContext<NewOrderFormData>();
@@ -11,10 +12,7 @@ export default function OrderScheduleCard() {
   // Watch global state to highlight the correct active button
   const scheduleMode = useWatch({ control, name: "scheduleMode" });
   const scheduleDate = useWatch({ control, name: "scheduleDate" });
-
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // Prevent users from picking "Today" or "Tomorrow" via the custom date picker
   const dayAfterTomorrow = useMemo(() => {
     const date = new Date();
     date.setDate(date.getDate() + 2);
@@ -43,11 +41,11 @@ export default function OrderScheduleCard() {
   };
 
   return (
-    <View className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm mb-6">
-      <View className="flex-row items-center justify-between mb-4">
-        <View className="flex-row items-center gap-2">
+    <View style={styles.cardBase}>
+      <View style={styles.headerRow}>
+        <View style={styles.titleRow}>
           <CalendarDays size={16} color="#64748b" />
-          <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Delivery Schedule</Text>
+          <Text style={styles.titleText}>Delivery Schedule</Text>
         </View>
 
         {/* iOS Date Picker Inline Option */}
@@ -62,33 +60,48 @@ export default function OrderScheduleCard() {
         )}
       </View>
 
-      <View className="flex-row gap-3">
+      <View style={styles.buttonRow}>
         <TouchableOpacity
           onPress={() => setMode("TODAY")}
-          className={`flex-1 py-3 rounded-xl border items-center justify-center ${scheduleMode === "TODAY" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
-            }`}
+          style={[
+            styles.buttonBase,
+            scheduleMode === "TODAY" ? styles.buttonActive : styles.buttonInactive
+          ]}
         >
-          <Text className={`text-xs font-bold ${scheduleMode === "TODAY" ? "text-sky-700" : "text-slate-600"}`}>
+          <Text style={[
+            styles.buttonTextBase,
+            scheduleMode === "TODAY" ? styles.buttonTextActive : styles.buttonTextInactive
+          ]}>
             Today
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => setMode("TOMORROW")}
-          className={`flex-1 py-3 rounded-xl border items-center justify-center ${scheduleMode === "TOMORROW" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
-            }`}
+          style={[
+            styles.buttonBase,
+            scheduleMode === "TOMORROW" ? styles.buttonActive : styles.buttonInactive
+          ]}
         >
-          <Text className={`text-xs font-bold ${scheduleMode === "TOMORROW" ? "text-sky-700" : "text-slate-600"}`}>
+          <Text style={[
+            styles.buttonTextBase,
+            scheduleMode === "TOMORROW" ? styles.buttonTextActive : styles.buttonTextInactive
+          ]}>
             Tomorrow
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => setShowDatePicker(true)}
-          className={`flex-1 py-3 rounded-xl border items-center justify-center ${scheduleMode === "LATER" ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200"
-            }`}
+          style={[
+            styles.buttonBase,
+            scheduleMode === "LATER" ? styles.buttonActive : styles.buttonInactive
+          ]}
         >
-          <Text className={`text-xs font-bold ${scheduleMode === "LATER" ? "text-sky-700" : "text-slate-600"}`}>
+          <Text style={[
+            styles.buttonTextBase,
+            scheduleMode === "LATER" ? styles.buttonTextActive : styles.buttonTextInactive
+          ]}>
             {scheduleMode === "LATER"
               ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
               : "Pick Date"}
@@ -103,7 +116,7 @@ export default function OrderScheduleCard() {
           mode="date"
           display="default"
           minimumDate={dayAfterTomorrow}
-          onChange={handleDateChange}
+          onValueChange={handleDateChange}
         />
       )}
     </View>

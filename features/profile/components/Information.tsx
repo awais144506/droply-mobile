@@ -2,10 +2,12 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { Lock, User, Mail, Phone, CreditCard, CalendarDays } from 'lucide-react-native';
 import { Rider } from '../types/profile';
+import { informationStyles as styles } from '../style/profile-styles'; // Adjust path if needed
 
 type RiderData = {
     profile: Rider | undefined;
 }
+
 export const Information = ({ profile }: RiderData) => {
     const {
         name = "Not Provided",
@@ -20,15 +22,15 @@ export const Information = ({ profile }: RiderData) => {
         : "Unknown Date";
 
     return (
-        <View className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm mb-4">
+        <View style={styles.card}>
             {/* Header section */}
-            <View className="flex-row items-center justify-between pb-4 border-b border-slate-100 mb-2">
-                <Text className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+            <View style={styles.headerRow}>
+                <Text style={styles.headerTitle}>
                     Personal Info
                 </Text>
-                <View className="flex-row items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                <View style={styles.badge}>
                     <Lock size={12} color="#94a3b8" />
-                    <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <Text style={styles.badgeText}>
                         Read Only
                     </Text>
                 </View>
@@ -46,7 +48,7 @@ export const Information = ({ profile }: RiderData) => {
     );
 };
 
-// 3. Reusable row component for a perfectly consistent, DRY layout
+// Reusable row component for a perfectly consistent, DRY layout
 const InfoRow = ({
     icon: Icon,
     label,
@@ -59,15 +61,15 @@ const InfoRow = ({
     isFirst?: boolean
 }) => {
     return (
-        <View className={`flex-row items-center gap-4 py-3 ${!isFirst ? 'border-t border-slate-50' : ''}`}>
-            <View className="h-10 w-10 rounded-xl bg-slate-50 items-center justify-center border border-slate-100">
+        <View style={[styles.rowContainer, !isFirst && styles.rowBorderTop]}>
+            <View style={styles.iconWrapper}>
                 <Icon size={18} color="#64748b" strokeWidth={2} />
             </View>
-            <View className="flex-1 justify-center">
-                <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
+            <View style={styles.textWrapper}>
+                <Text style={styles.rowLabel}>
                     {label}
                 </Text>
-                <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>
+                <Text style={styles.rowValue} numberOfLines={1}>
                     {value}
                 </Text>
             </View>

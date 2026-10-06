@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, TextInput, ScrollView } from "react-native";
 import { Search, ChevronDown, ChevronUp, Check, X } from "lucide-react-native";
+import { searchableSelectStyles as styles } from "../style/custom-style";
 
 export interface SelectOption {
   id: string;
@@ -37,8 +38,8 @@ export default function SearchableSelect({
   const selectedOption = options.find((o) => o.id === selectedValue);
 
   return (
-    <View className="mb-4 relative z-50">
-      <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">
+    <View style={styles.container}>
+      <Text style={styles.label}>
         {label}
       </Text>
       
@@ -49,42 +50,47 @@ export default function SearchableSelect({
           setSearchQuery("");
           setIsOpen(!isOpen);
         }}
-        className={`flex-row items-center justify-between bg-slate-50 border h-12 px-3 ${
-          isOpen ? "rounded-t-xl border-slate-300 border-b-0" : "rounded-xl border-slate-200"
-        } ${disabled ? "opacity-60 bg-slate-100" : ""}`}
+        style={[
+          styles.triggerBase,
+          isOpen ? styles.triggerOpen : styles.triggerClosed,
+          disabled && styles.triggerDisabled
+        ]}
       >
-        <Text className={`text-sm font-semibold ${selectedOption ? "text-slate-900" : "text-slate-400"}`}>
+        <Text style={[
+          styles.triggerTextBase,
+          selectedOption ? styles.triggerTextSelected : styles.triggerTextPlaceholder
+        ]}>
           {selectedOption ? selectedOption.label : placeholder}
         </Text>
         {isOpen ? <ChevronUp size={18} color="#64748b" /> : <ChevronDown size={18} color="#94a3b8" />}
       </TouchableOpacity>
 
       {isOpen && (
-        <View className="bg-white border border-slate-300 border-t-0 rounded-b-xl overflow-hidden shadow-sm">
+        <View style={styles.dropdownContainer}>
           {/* Search Input */}
-          <View className="p-2 border-b border-slate-100 bg-slate-50">
-            <View className="flex-row items-center bg-white border border-slate-200 rounded-lg px-2 h-10">
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputWrapper}>
               <Search size={14} color="#94a3b8" />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search..."
-                className="flex-1 ml-2 text-xs font-medium text-slate-900"
+                style={styles.searchInputText}
                 placeholderTextColor="#94a3b8"
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery("")} className="p-1">
+                <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
                   <X size={14} color="#94a3b8" />
                 </TouchableOpacity>
               )}
             </View>
           </View>
           
-          {/* List Renderer - Now using ScrollView to avoid FlatList nesting crash */}
+          {/* List Renderer - Using ScrollView to avoid FlatList nesting crash */}
           <ScrollView 
             nestedScrollEnabled={true}
             keyboardShouldPersistTaps="handled"
-            style={{ maxHeight: 200 }}
+            style={styles.scrollView}
           >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((item) => {
@@ -96,9 +102,15 @@ export default function SearchableSelect({
                       onSelect(item.id);
                       setIsOpen(false);
                     }}
-                    className={`flex-row items-center justify-between px-4 py-3 border-b border-slate-50 ${isSelected ? "bg-sky-50/50" : "bg-white"}`}
+                    style={[
+                      styles.listItemBase,
+                      isSelected ? styles.listItemSelected : styles.listItemNormal
+                    ]}
                   >
-                    <Text className={`text-xs ${isSelected ? "font-bold text-sky-700" : "font-medium text-slate-700"}`}>
+                    <Text style={[
+                      styles.listItemTextBase,
+                      isSelected ? styles.listItemTextSelected : styles.listItemTextNormal
+                    ]}>
                       {item.label}
                     </Text>
                     {isSelected && <Check size={16} color="#0284c7" />}
@@ -106,8 +118,8 @@ export default function SearchableSelect({
                 );
               })
             ) : (
-              <View className="py-6 items-center justify-center">
-                <Text className="text-xs text-slate-400">No results found.</Text>
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No results found.</Text>
               </View>
             )}
           </ScrollView>
