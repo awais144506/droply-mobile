@@ -8,7 +8,13 @@
     "scheme": "droplymobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -41,7 +47,17 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Droply to track your location to provide live delivery updates to the base.",
+          "locationAlwaysPermission": "Allow Droply to track deliveries even when the app is in the background.",
+          "locationWhenInUsePermission": "Allow Droply to use your location to track deliveries in real-time.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
