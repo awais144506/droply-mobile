@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable react-hooks/refs */
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,17 +14,20 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { customerSchema, CustomerFormData } from "@/features/orders/schema/customer-schema";
-import { ArrowLeft, User, UserPlus, Phone, Building2, Send } from "lucide-react-native";
-import PhoneInput from "react-native-phone-number-input";
+import { ArrowLeft, User, UserPlus, Building2, Send } from "lucide-react-native";
+import PhoneInput from "react-native-phone-number-input"; // 👈 Using the original package
 import { useRequestNewCustomer } from "@/features/orders/api/use-customer";
 import { useRole } from "@/lib/use-role";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import Loading from "@/app/loading";
-import { addCustomerStyles as styles } from "@/features/orders/style/order-style"; // Adjust path if needed
+import { addCustomerStyles as styles } from "@/features/orders/style/order-style";
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();
   const { userId, branchId } = useRole();
+
+  // 🔥 1. Create the reference to access built-in methods
+  const phoneRef = useRef<PhoneInput>(null);
 
   const { mutate: createRequest, isPending } = useRequestNewCustomer(branchId);
 
@@ -43,12 +47,12 @@ export default function AddNewCustomerScreen() {
     setAlertConfig((prev) => ({ ...prev, visible: false }));
   };
 
-  // Initialize React Hook Form
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors, isValid },
+    setError,
   } = useForm<CustomerFormData>({
     resolver: yupResolver(customerSchema),
     mode: "onChange",
@@ -59,8 +63,13 @@ export default function AddNewCustomerScreen() {
     },
   });
 
-  // Form Submit Handler using CustomAlert
   const onSubmit = (data: CustomerFormData) => {
+    const isValidPhone = phoneRef.current?.isValidNumber(data.phone);
+    if (!isValidPhone) {
+      setError("phone", { type: "manual", message: "Please enter a valid phone number" });
+      return;
+    }
+
     const payload = {
       ...data,
       requestedById: userId || "",
@@ -82,8 +91,8 @@ export default function AddNewCustomerScreen() {
     });
   };
 
-  if (isPending) return <Loading text="Sending Request..." />
-  
+  if (isPending) return <Loading text="Sending Request..." />;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardView}>
@@ -103,7 +112,6 @@ export default function AddNewCustomerScreen() {
         </View>
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-
           <View style={styles.infoBanner}>
             <Text style={styles.infoTitle}>Manager Approval Required</Text>
             <Text style={styles.infoText}>
@@ -113,13 +121,12 @@ export default function AddNewCustomerScreen() {
 
           <View style={styles.formCard}>
             <Text style={styles.formCardTitle}>Customer Details</Text>
-
             <View style={styles.inputsContainer}>
 
               {/* Name Field */}
               <View>
                 <View style={[
-                  styles.inputWrapperBase, 
+                  styles.inputWrapperBase,
                   errors.name ? styles.inputWrapperError : styles.inputWrapperNormal
                 ]}>
                   <User size={16} color={errors.name ? "#f43f5e" : "#64748b"} />
@@ -144,24 +151,24 @@ export default function AddNewCustomerScreen() {
               {/* Phone Field */}
               <View>
                 <View style={[
-                  styles.inputWrapperBase, 
+                  styles.inputWrapperBase,
                   errors.phone ? styles.inputWrapperError : styles.inputWrapperNormal
                 ]}>
-                  <Phone size={16} color={errors.phone ? "#f43f5e" : "#64748b"} />
                   <Controller
                     control={control}
                     name="phone"
                     render={({ field: { onChange, value } }) => (
                       <PhoneInput
+                        ref={phoneRef}
                         key={`phone-input-${resetKey}`}
                         defaultValue={value}
                         defaultCode="PK"
                         layout="first"
                         onChangeFormattedText={(text) => {
-                          onChange(text);
+                          const cleanedText = text.replace(/(\+\d+?)0/, '$1');
+                          onChange(cleanedText);
                         }}
-                        placeholder="e.g 03216907425"
-                        // FIX: Explicitly passing textInputProps to force placeholder color
+                        placeholder="e.g 3216908182"
                         textInputProps={{ placeholderTextColor: '#94a3b8' }}
                         containerStyle={{ flex: 1, backgroundColor: 'transparent', height: 48 }}
                         textContainerStyle={{ backgroundColor: 'transparent', paddingVertical: 0, paddingHorizontal: 0 }}
@@ -169,6 +176,23 @@ export default function AddNewCustomerScreen() {
                         codeTextStyle={{ fontSize: 14, fontWeight: "600", color: "#0f172a", marginLeft: -15 }}
                         flagButtonStyle={{ width: 45, marginLeft: -5 }}
                         withShadow={false}
+                        countryPickerProps={{
+                          withFilter: true,
+                          withAlphaSelect: true,
+                          filterProps: {
+                            style: {
+                              marginTop: Platform.OS === 'android' ? 70 : 50,
+                              paddingHorizontal: 16,
+                              fontSize: 16,
+                              backgroundColor: '#f1f5f9',
+                              height: 48,
+                              borderRadius: 8,
+                              borderWidth: 1,
+                              borderColor: '#cbd5e1'
+                            },
+                            placeholderTextColor: '#94a3b8'
+                          }
+                        }}
                       />
                     )}
                   />
@@ -179,7 +203,7 @@ export default function AddNewCustomerScreen() {
               {/* Address Field */}
               <View>
                 <View style={[
-                  styles.inputWrapperBase, 
+                  styles.inputWrapperBase,
                   errors.address ? styles.inputWrapperError : styles.inputWrapperNormal
                 ]}>
                   <Building2 size={16} color={errors.address ? "#f43f5e" : "#64748b"} />

@@ -1,7 +1,8 @@
 // src/features/orders/components/OrderListCard.tsx
 import { TouchableOpacity, Text, View } from 'react-native';
-import { CircleDashed, CheckCircle2, User, MapPin, Clock, Phone, Trash2 } from 'lucide-react-native';
-import { orderCardStyles as styles } from '../style/order-style'; // Adjust path if needed
+import { CircleDashed, CheckCircle2, User, MapPin, Clock, Phone, Trash2, Calendar } from 'lucide-react-native';
+import { orderCardStyles as styles } from '../style/order-style';
+import { getScheduledText } from '../utils/scheduleHelper';
 
 interface OrderCardProps {
     order: any;
@@ -21,7 +22,7 @@ export const OrderCard = ({ order, onDelete }: OrderCardProps) => {
                 <View>
                     <Text style={styles.orderNoText}>Order No: {order.orderCode}</Text>
                 </View>
-                
+
                 {isPending && (
                     <TouchableOpacity
                         onPress={onDelete}
@@ -41,7 +42,7 @@ export const OrderCard = ({ order, onDelete }: OrderCardProps) => {
                     </View>
 
                     <View style={[
-                        styles.statusBadgeBase, 
+                        styles.statusBadgeBase,
                         isPending ? styles.statusBadgePending : styles.statusBadgeDone
                     ]}>
                         {isPending ? <CircleDashed size={10} color="#d97706" /> : <CheckCircle2 size={10} color="#059669" />}
@@ -73,19 +74,30 @@ export const OrderCard = ({ order, onDelete }: OrderCardProps) => {
                 )}
             </View>
 
-            {/* Footer: Time & Total */}
             <View style={styles.footerBox}>
-                <View style={styles.timeRow}>
-                    <Clock size={14} color="#94a3b8" />
-                    <View>
-                        <Text style={styles.footerLabel}>Time</Text>
-                        <Text style={styles.timeValue}>{orderTime}</Text>
+                <View style={[styles.timeRow, { gap: 16 }]}>
+                    {/* Time Block */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Clock size={14} color="#94a3b8" />
+                        <View>
+                            <Text style={styles.footerLabel}>Created</Text>
+                            <Text style={styles.timeValue}>{orderTime}</Text>
+                        </View>
+                    </View>
+
+                    {/* Scheduled Date Block */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Calendar size={14} color="#94a3b8" />
+                        <View>
+                            <Text style={styles.footerLabel}>Scheduled</Text>
+                            <Text style={styles.timeValue}>{getScheduledText(order.scheduledDate)}</Text>
+                        </View>
                     </View>
                 </View>
 
                 <View style={styles.totalBox}>
                     <Text style={styles.footerLabel}>Order Total</Text>
-                    <Text style={styles.totalValue}>Rs {order.totalAmount}</Text>
+                    <Text style={styles.totalValue}>Rs {order.totalAmount?.toLocaleString()}</Text>
                 </View>
             </View>
         </TouchableOpacity>

@@ -284,40 +284,50 @@ export const orderCardStyles = StyleSheet.create({
     },
     footerBox: {
         backgroundColor: '#f8fafc', // bg-slate-50
-        borderRadius: 16, // rounded-2xl
-        padding: 12, // p-3
+        borderRadius: 12, // rounded-xl (slightly cleaner than 16 for inner elements)
+        padding: 12,
+        paddingHorizontal: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderWidth: 1,
-        borderColor: '#f1f5f9', // border-slate-100
+        borderColor: '#e2e8f0', // border-slate-200 (slightly more visible)
+        marginTop: 8,
     },
     timeRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6, // gap-1.5
+        gap: 16, // Space between Time block and Date block
+    },
+    footerItemWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8, // Space between icon and text
     },
     footerLabel: {
-        fontSize: 9, // text-[9px]
-        fontWeight: '700', // font-bold
+        fontSize: 9,
+        fontWeight: '700',
         textTransform: 'uppercase',
         color: '#94a3b8', // text-slate-400
-        letterSpacing: 1, // tracking-wider
-        marginBottom: 2, // mb-0.5 (used in Total)
+        letterSpacing: 0.5,
+        marginBottom: 2,
     },
     timeValue: {
-        fontSize: 12, // text-xs
-        fontWeight: '600', // font-semibold
+        fontSize: 12,
+        fontWeight: '600',
         color: '#334155', // text-slate-700
     },
     totalBox: {
-        alignItems: 'flex-end',
+        alignItems: 'flex-end', // Aligns the total text to the right
+        borderLeftWidth: 1,
+        borderLeftColor: '#e2e8f0',
+        paddingLeft: 16,
     },
     totalValue: {
-        fontSize: 14, // text-sm
-        fontWeight: '800', // font-extrabold
-        color: '#0284c7', // text-sky-600
-    }
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#047857', // text-slate-900
+    },
 });
 export const addCustomerStyles = StyleSheet.create({
     safeArea: {

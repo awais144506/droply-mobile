@@ -29,7 +29,7 @@ export const useRequestNewCustomer = (branchId: string) => {
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: 'Phone no already existed.',
+                text2: error.message,
                 position: 'top',
                 visibilityTime: 3000,
             });
