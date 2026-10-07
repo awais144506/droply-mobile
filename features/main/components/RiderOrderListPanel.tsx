@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, LayoutAnimation, ScrollView, Dimensions, 
 import { ChevronUp, ChevronDown } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
 
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface OrderWithDistance extends RiderActiveOrder {
@@ -14,7 +15,7 @@ interface RiderOrderListPanelProps {
   selectedOrderId: string | null;
   hasActiveRide: boolean;
   onSelectOrder: (order: RiderActiveOrder) => void;
-  onUpdateStatus: (orderId: string, status: string) => void;
+  onUpdateStatus: (orderId: string, status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED') => void;
   onOpenDetails: (order: RiderActiveOrder) => void;
 }
 

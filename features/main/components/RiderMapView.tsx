@@ -76,7 +76,7 @@ export default function RiderMapView({
     }, [isNavigating, riderLocation]);
 
     return (
-        <View className="flex-1 relative">
+        <View style={styles.container}>
             <Map style={StyleSheet.absoluteFill} mapStyle="https://tiles.openfreemap.org/styles/liberty">
 
                 {/* Clean, strict TypeScript implementation */}
@@ -92,7 +92,7 @@ export default function RiderMapView({
 
                 {riderLocation && (
                     <Marker id="rider" lngLat={[riderLocation.longitude, riderLocation.latitude]}>
-                        <View className="h-8 w-8 rounded-full bg-slate-900 border-2 border-white items-center justify-center shadow-lg">
+                        <View style={styles.riderMarker}>
                             <Bike size={16} color="#ffffff" />
                         </View>
                     </Marker>
@@ -108,9 +108,12 @@ export default function RiderMapView({
                             lngLat={[order.customer.longitude, order.customer.latitude]}
                             onPress={() => onSelectOrder(order)}
                         >
-                            <View className="items-center">
-                                <View className={`px-2 py-0.5 rounded-md shadow-md mb-1 ${isSelected ? "bg-sky-600" : "bg-slate-800"}`}>
-                                    <Text className="text-[10px] font-bold text-white">#{index + 1}</Text>
+                            <View style={styles.orderMarkerContainer}>
+                                <View style={[
+                                    styles.orderBadge,
+                                    isSelected ? styles.orderBadgeSelected : styles.orderBadgeDefault
+                                ]}>
+                                    <Text style={styles.orderBadgeText}>#{index + 1}</Text>
                                 </View>
                                 <Pin size={isSelected ? 30 : 22} color={isSelected ? "#0284c7" : "#1e293b"} />
                             </View>
@@ -129,6 +132,8 @@ export default function RiderMapView({
             </Map>
 
             <TouchableOpacity
+                style={styles.recenterButton}
+                activeOpacity={0.8}
                 onPress={() => {
                     onRecenter();
                     if (cameraRef.current && riderLocation) {
@@ -144,10 +149,70 @@ export default function RiderMapView({
                         }
                     }
                 }}
-                className="absolute bottom-25 bg-slate-800 p-3 rounded-full shadow-xl"
             >
                 <LocateFixed size={22} color="#ffffff" />
             </TouchableOpacity>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        position: 'relative',
+    },
+    riderMarker: {
+        height: 32,
+        width: 32,
+        borderRadius: 16,
+        backgroundColor: '#0f172a',
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 6,
+    },
+    orderMarkerContainer: {
+        alignItems: 'center',
+    },
+    orderBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        marginBottom: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 4,
+    },
+    orderBadgeSelected: {
+        backgroundColor: '#0284c7', // bg-sky-600
+    },
+    orderBadgeDefault: {
+        backgroundColor: '#1e293b', // bg-slate-800
+    },
+    orderBadgeText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#ffffff',
+    },
+    recenterButton: {
+        position: 'absolute',
+        bottom: 350, 
+        left: 20, 
+        backgroundColor: '#0f172a', 
+        padding: 12,
+        borderRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 8,
+        zIndex: 20,
+    }
+});

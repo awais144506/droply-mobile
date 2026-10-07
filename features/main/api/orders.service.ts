@@ -10,8 +10,14 @@ export const ordersApi = {
   updateOrderStatus: async (
     api: AxiosInstance,
     orderId: string,
-    status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED'
+    status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED',
+    settlementData?: {
+      deductedAdvance: number;
+      collectedAmount: number;
+      paymentMethod: 'CASH' | 'ONLINE';
+    }
   ): Promise<void> => {
-    await api.patch(`/rider/orders/${orderId}/status`, { status });
+    console.log(settlementData)
+    await api.patch(`/rider/orders/${orderId}/status`, { status, settlementData });
   },
 };
