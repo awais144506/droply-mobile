@@ -3,7 +3,7 @@ import { useApiClient } from "@/lib/api-client"; // Adjust path if necessary
 import { customerService } from "./customer.service";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
-import { logKeys } from "@/features/wallet/api/log-keys";
+import { logKeys } from "@/features/rider/wallet/api/log-keys";
 import { CreateCustomerRequestPayload } from "../types/customer";
 
 export const useRequestNewCustomer = (branchId: string) => {

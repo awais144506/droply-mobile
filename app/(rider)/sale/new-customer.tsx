@@ -13,14 +13,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { customerSchema, CustomerFormData } from "@/features/orders/schema/customer-schema";
+import { customerSchema, CustomerFormData } from "@/features/rider/orders/schema/customer-schema";
 import { ArrowLeft, User, UserPlus, Building2, Send } from "lucide-react-native";
 import PhoneInput from "react-native-phone-number-input"; // 👈 Using the original package
-import { useRequestNewCustomer } from "@/features/orders/api/use-customer";
+import { useRequestNewCustomer } from "@/features/rider/orders/api/use-customer";
 import { useRole } from "@/lib/use-role";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import Loading from "@/app/loading";
-import { addCustomerStyles as styles } from "@/features/orders/style/order-style";
+import { addCustomerStyles as styles } from "@/features/rider/orders/style/order-style";
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();

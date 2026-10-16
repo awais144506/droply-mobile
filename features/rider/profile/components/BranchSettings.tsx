@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, Image } from 'react-native';
 import { BranchSettings as BranchType } from '../types/profile';
-import { branchSettingsStyles as styles } from '../style/profile-styles'; // Adjust path if needed
+import { branchSettingsStyles as styles } from '../style/profile-styles';
 
 type BranchSettingsData = {
     branch: BranchType | undefined;
@@ -22,7 +22,7 @@ const BranchSettings = ({ branch }: BranchSettingsData) => {
             ) : (
                 <View style={styles.fallbackLogoContainer}>
                     <Text style={styles.fallbackLogoText}>
-                        {branch.displayName?.charAt(0) || 'B'}
+                        {branch.name?.charAt(0) || 'B'}
                     </Text>
                 </View>
             )}
@@ -30,18 +30,18 @@ const BranchSettings = ({ branch }: BranchSettingsData) => {
             {/* Branch Details */}
             <View style={styles.detailsContainer}>
                 <Text style={styles.branchNameText} numberOfLines={1}>
-                    {branch.displayName || 'Main Branch'}
+                    {branch.name || 'Main Branch'}
                 </Text>
 
-                {branch.displayPhone && (
+                {branch.phone && (
                     <Text style={styles.phoneText}>
-                        📞 {branch.displayPhone}
+                        {branch.phone}
                     </Text>
                 )}
 
-                {branch.displayAddress && (
+                {branch.address && (
                     <Text style={styles.addressText} numberOfLines={2}>
-                        📍 {branch.displayAddress}
+                        {branch.address}
                     </Text>
                 )}
             </View>

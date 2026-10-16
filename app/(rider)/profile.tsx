@@ -2,12 +2,12 @@ import React from 'react';
 import { ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRole } from "@/lib/use-role";
-import { ProfileDetails } from "@/features/profile/components/ProfileDetails";
-import { Information } from "@/features/profile/components/Information";
-import { AssignedZones } from "@/features/profile/components/AssignedZones";
-import { Footer } from "@/features/profile/components/Footer";
-import BranchSettings from "@/features/profile/components/BranchSettings";
-import { useRiderProfile } from "@/features/profile/api/use-profile";
+import { ProfileDetails } from "@/features/rider/profile/components/ProfileDetails";
+import { Information } from "@/features/rider/profile/components/Information";
+import { AssignedZones } from "@/features/rider/profile/components/AssignedZones";
+import { Footer } from "@/features/rider/profile/components/Footer";
+import BranchSettings from "@/features/rider/profile/components/BranchSettings";
+import { useRiderProfile } from "@/features/rider/profile/api/use-profile";
 import Loading from "../loading";
 
 export default function RiderProfileScreen() {

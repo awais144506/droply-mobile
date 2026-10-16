@@ -272,10 +272,16 @@ export const profileDetailsStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6, // gap-1.5
-        backgroundColor: '#f0f9ff', // sky-50
+        backgroundColor: '#f0f9ff', // sky-50 (Default / Rider)
         paddingHorizontal: 12, // px-3
         paddingVertical: 6, // py-1.5
         borderRadius: 9999, // rounded-full
+    },
+    roleBadgeManager: {
+        backgroundColor: '#eef2ff', // indigo-50
+    },
+    roleBadgeOwner: {
+        backgroundColor: '#fffbeb', // amber-50
     },
     roleBadgeText: {
         fontSize: 11, // text-[11px]
@@ -283,6 +289,12 @@ export const profileDetailsStyles = StyleSheet.create({
         color: '#0369a1', // sky-700
         textTransform: 'uppercase',
         letterSpacing: 1, // tracking-wider
+    },
+    roleBadgeTextManager: {
+        color: '#4338ca', // indigo-700
+    },
+    roleBadgeTextOwner: {
+        color: '#b45309', // amber-700
     },
     statusBadge: {
         flexDirection: 'row',

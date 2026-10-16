@@ -1,10 +1,10 @@
 import { View, Text, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ClipboardList } from "lucide-react-native";
-import { TaskCard } from "@/features/tasks/components/TaskCard";
+import { TaskCard } from "@/features/rider/tasks/components/TaskCard";
 import { useRole } from "@/lib/use-role";
-import { useTasks, useUpdateTask } from "@/features/tasks/api/use-tasks";
-import { mainTasksPageStyle as styles } from "@/features/tasks/style/task-styles";
+import { useTasks, useUpdateTask } from "@/features/rider/tasks/api/use-tasks";
+import { mainTasksPageStyle as styles } from "@/features/rider/tasks/style/task-styles";
 import Loading from "../loading";
 import Error from "../error";
 

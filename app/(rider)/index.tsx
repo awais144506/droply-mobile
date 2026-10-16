@@ -3,14 +3,14 @@ import { View, Alert, Text, TouchableOpacity, StyleSheet, ActivityIndicator } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { RefreshCw } from 'lucide-react-native';
-import { useTodayActiveOrders, useUpdateOrderStatus } from '@/features/main/api/use-rider-orders';
-import { useRiderLocation } from '@/features/main/api/use-rider-location';
+import { useTodayActiveOrders,useUpdateOrderStatus } from '@/features/rider/main/api/use-rider-orders';
+import { useRiderLocation } from '@/features/rider/main/api/use-rider-location';
 import { getDistanceInMeters, formatDistance } from '@/utils/locationUtils';
-import { useRiderSocket } from '@/features/main/api/use-rider-socket';
-import RiderMapView from '@/features/main/components/RiderMapView';
-import RiderOrderListPanel from '@/features/main/components/RiderOrderListPanel';
-import RiderOrderSettlementView from '@/features/main/components/RiderOrderSettlementView';
-import { RiderActiveOrder } from '@/features/main/types/orders';
+import { useRiderSocket } from '@/features/rider/main/api/use-rider-socket';
+import RiderMapView from '@/features/rider/main/components/RiderMapView';
+import RiderOrderListPanel from '@/features/rider/main/components/RiderOrderListPanel';
+import RiderOrderSettlementView from '@/features/rider/main/components/RiderOrderSettlementView';
+import { RiderActiveOrder } from '@/features/rider/main/types/orders';
 
 export default function MainScreen() {
   const { user } = useUser();

@@ -1,12 +1,40 @@
 import { useState } from 'react';
 import { TouchableOpacity, Text, View, Image, ActivityIndicator } from 'react-native';
-import { Camera, Bike, CheckCircle2, LogOut, User } from 'lucide-react-native';
+import { Camera, Bike, Briefcase, Crown, CheckCircle2, LogOut, User } from 'lucide-react-native';
 import { useClerk, useUser } from "@clerk/clerk-expo";
 import * as ImagePicker from "expo-image-picker";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import { useRole } from '@/lib/use-role';
 import { useRouter } from 'expo-router';
 import { profileDetailsStyles as styles } from '../style/profile-styles'; // Adjust path if needed
+
+// Helper configuration function for dynamic role styling & icons
+const getRoleBadgeConfig = (roleStr: string) => {
+    const normalized = roleStr?.toLowerCase() || "";
+
+    if (normalized.includes("manager")) {
+        return {
+            icon: <Briefcase size={12} color="#4338ca" strokeWidth={2.5} />, // indigo-700
+            badgeStyle: styles.roleBadgeManager,
+            textStyle: styles.roleBadgeTextManager,
+        };
+    }
+
+    if (normalized.includes("owner") || normalized.includes("admin")) {
+        return {
+            icon: <Crown size={12} color="#b45309" strokeWidth={2.5} />, // amber-700
+            badgeStyle: styles.roleBadgeOwner,
+            textStyle: styles.roleBadgeTextOwner,
+        };
+    }
+
+    // Default fallback (Rider / Staff)
+    return {
+        icon: <Bike size={12} color="#0369a1" strokeWidth={2.5} />, // sky-700
+        badgeStyle: null,
+        textStyle: null,
+    };
+};
 
 export const ProfileDetails = () => {
     const { user } = useUser();
@@ -91,6 +119,8 @@ export const ProfileDetails = () => {
         });
     };
 
+    const roleConfig = getRoleBadgeConfig(role);
+
     return (
         <View style={styles.container}>
             {/* Main Info Card */}
@@ -132,9 +162,9 @@ export const ProfileDetails = () => {
 
                 {/* Badges */}
                 <View style={styles.badgesContainer}>
-                    <View style={styles.roleBadge}>
-                        <Bike size={12} color="#0284c7" strokeWidth={2.5} />
-                        <Text style={styles.roleBadgeText}>
+                    <View style={[styles.roleBadge, roleConfig.badgeStyle]}>
+                        {roleConfig.icon}
+                        <Text style={[styles.roleBadgeText, roleConfig.textStyle]}>
                             {role}
                         </Text>
                     </View>

@@ -7,7 +7,7 @@ import {
   CheckCheck,
   User
 } from "lucide-react-native";
-import { Task } from "@/features/tasks/types/task";
+import { Task } from "@/features/rider/tasks/types/task";
 import { taskCardStyle as styles } from "../style/task-styles";
 
 interface TaskCardProps {

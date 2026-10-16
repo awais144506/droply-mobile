@@ -3,15 +3,15 @@ import { View, ScrollView, TouchableOpacity, Text, RefreshControl } from "react-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Wallet, Fuel } from "lucide-react-native";
 import { format } from "date-fns";
-import WalletSummaryCard from "@/features/wallet/components/WalletSummaryCard";
-import WalletHistorySection from "@/features/wallet/components/WalletHistorySection";
-import AddExpenseModal from "@/features/wallet/components/AddExpenseModal";
-import { useRiderLogs } from "@/features/wallet/api/use-logs";
+import WalletSummaryCard from "@/features/rider/wallet/components/WalletSummaryCard";
+import WalletHistorySection from "@/features/rider/wallet/components/WalletHistorySection";
+import AddExpenseModal from "@/features/rider/wallet/components/AddExpenseModal";
+import { useRiderLogs } from "@/features/rider/wallet/api/use-logs";
 import { useRole } from "@/lib/use-role";
 import Error from "../error";
 import Loading from "../loading";
 import { DateFilterBar, DateFilterType } from "@/components/ui/DateFilterBar";
-import { walletScreenStyles as styles } from "@/features/wallet/style/log-style";
+import { walletScreenStyles as styles } from "@/features/rider/wallet/style/log-style";
 
 export default function WalletScreen() {
   const { branchId } = useRole();

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { ShieldAlert, LogOut, Building2, UserX, MapPin, Mail, MessageCircle } from 'lucide-react-native';
 import { useRole } from '@/lib/use-role';
-import { useRiderProfile } from '@/features/profile/api/use-profile';
+import { useRiderProfile } from '@/features/rider/profile/api/use-profile';
 
 export default function SuspendedScreen() {
     const { signOut } = useAuth();

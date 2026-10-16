@@ -7,16 +7,16 @@ import { useForm, FormProvider } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { ShoppingCart, CheckCircle2, ArrowLeft } from "lucide-react-native";
 import { useUser } from "@clerk/clerk-expo";
-import { useRiderOrderData } from "@/features/orders/api/use-order";
+import { useRiderOrderData } from "@/features/rider/orders/api/use-order";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
-import { newOrderSchema, NewOrderFormData } from "@/features/orders/schema/order-schema";
-import OrderCustomerCard from "@/features/orders/components/create-order/OrderCustomerCard";
-import OrderProductCart from "@/features/orders/components/create-order/OrderProductCart";
-import OrderFinancialsCard from "@/features/orders/components/create-order/OrderFinancialsCard";
-import OrderScheduleCard from "@/features/orders/components/create-order/OrderScheduleCard";
+import { newOrderSchema, NewOrderFormData } from "@/features/rider/orders/schema/order-schema";
+import OrderCustomerCard from "@/features/rider/orders/components/create-order/OrderCustomerCard";
+import OrderProductCart from "@/features/rider/orders/components/create-order/OrderProductCart";
+import OrderFinancialsCard from "@/features/rider/orders/components/create-order/OrderFinancialsCard";
+import OrderScheduleCard from "@/features/rider/orders/components/create-order/OrderScheduleCard";
 import { useRole } from "@/lib/use-role";
-import { useCreateOrder } from "@/features/orders/api/use-mutate-order";
-import { newOrderScreenStyles as styles } from "@/features/orders/style/order-style";
+import { useCreateOrder } from "@/features/rider/orders/api/use-mutate-order";
+import { newOrderScreenStyles as styles } from "@/features/rider/orders/style/order-style";
 import Loading from "@/app/loading";
 
 export default function NewOrderScreen() {

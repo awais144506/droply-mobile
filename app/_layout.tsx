@@ -14,8 +14,8 @@ const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 function GlobalAuthMiddleware({ children }: { children: React.ReactNode }) {
   const { isSignedIn } = useAuth();
-  const { userStatus } = useRole();
-  if (isSignedIn && userStatus === 'SUSPENDED') {
+  const { userStatus, branchStatus } = useRole();
+  if (isSignedIn && (userStatus === 'SUSPENDED' || branchStatus === 'SUSPENDED')) {
     return <SuspendedScreen />;
   }
 

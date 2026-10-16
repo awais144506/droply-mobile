@@ -5,13 +5,13 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshCon
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ShoppingCart, UserPlus, ArrowRight, Bike, Package } from "lucide-react-native";
-import { useOrderList } from "@/features/orders/api/use-order";
-import { useDeleteOrder } from "@/features/orders/api/use-mutate-order";
+import { useOrderList } from "@/features/rider/orders/api/use-order";
+import { useDeleteOrder } from "@/features/rider/orders/api/use-mutate-order";
 import { DateFilterBar, DateFilterType } from "@/components/ui/DateFilterBar";
-import OrderCard from "@/features/orders/components/OrderCard";
+import OrderCard from "@/features/rider/orders/components/OrderCard";
 import { CustomAlert } from "@/components/ui/CustomAlert";
 import { useRole } from "@/lib/use-role";
-import { ordersScreenStyles as styles } from "@/features/orders/style/order-style";
+import { ordersScreenStyles as styles } from "@/features/rider/orders/style/order-style";
 import Loading from "../loading";
 
 export default function OrdersScreen() {

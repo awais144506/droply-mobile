@@ -21,8 +21,8 @@ export interface AssignedZones {
 }
 
 export interface BranchSettings {
-    displayName: string,
-    displayPhone: string,
-    displayAddress: string,
+    name: string,
+    phone: string,
+    address: string,
     logoUrl: string,
 }
