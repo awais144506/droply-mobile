@@ -11,10 +11,6 @@ export const Footer = () => {
                 resizeMode="contain"
             />
 
-            <Text style={styles.titleText}>
-                Rider App
-            </Text>
-
             <Text style={styles.versionText}>
                 Version 1.0.0
             </Text>

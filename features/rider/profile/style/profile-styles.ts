@@ -170,12 +170,6 @@ export const branchSettingsStyles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#dbeafe', // blue-100
     },
-    fallbackLogoText: {
-        fontSize: 20, // text-xl
-        fontWeight: '800', // font-extrabold
-        color: '#3b82f6', // blue-500
-        textTransform: 'uppercase',
-    },
     detailsContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -186,17 +180,24 @@ export const branchSettingsStyles = StyleSheet.create({
         color: '#1e293b', // slate-800
         marginBottom: 4, // mb-1
     },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6, // spacing between icon and text
+        marginBottom: 2,
+    },
     phoneText: {
         fontSize: 14, // text-sm
         fontWeight: '500', // font-medium
         color: '#64748b', // slate-500
-        marginBottom: 2, // mb-0.5
+        flex: 1,
     },
     addressText: {
         fontSize: 12, // text-xs
         fontWeight: '500', // font-medium
         color: '#94a3b8', // slate-400
         lineHeight: 16, // leading-tight
+        flex: 1,
     }
 });
 

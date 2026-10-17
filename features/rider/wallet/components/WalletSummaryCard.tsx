@@ -6,7 +6,6 @@ import { walletSummaryDetailsStyle as styles } from '../style/log-style';
 
 interface SummaryCardProps {
   date: Date;
-  // totalCashIn will eventually come from the backend, using dummy data below for now
 }
 
 export default function WalletSummaryCard({ date }: SummaryCardProps) {

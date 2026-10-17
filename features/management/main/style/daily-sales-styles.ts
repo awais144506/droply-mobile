@@ -11,6 +11,19 @@ export const dailySalesStyles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 40,
   },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+  },
 
   // --- Header Card ---
   headerCard: {
@@ -307,5 +320,19 @@ export const dailySalesStyles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     color: "#94a3b8",
+  },
+  emptyAlertCard: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+  emptyAlertText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
   },
 });

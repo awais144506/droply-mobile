@@ -2,7 +2,7 @@
 export interface RiderProfile {
     rider: Rider;
     zones: AssignedZones[];
-    branch: BranchSettings;
+    branch: BranchDetails;
 }
 
 export interface Rider {
@@ -20,7 +20,7 @@ export interface AssignedZones {
     totalCustomers: number;
 }
 
-export interface BranchSettings {
+export interface BranchDetails {
     name: string,
     phone: string,
     address: string,

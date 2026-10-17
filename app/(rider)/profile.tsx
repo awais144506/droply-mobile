@@ -6,7 +6,7 @@ import { ProfileDetails } from "@/features/rider/profile/components/ProfileDetai
 import { Information } from "@/features/rider/profile/components/Information";
 import { AssignedZones } from "@/features/rider/profile/components/AssignedZones";
 import { Footer } from "@/features/rider/profile/components/Footer";
-import BranchSettings from "@/features/rider/profile/components/BranchSettings";
+import BranchSettings from '@/features/rider/profile/components/BranchSettings';
 import { useRiderProfile } from "@/features/rider/profile/api/use-profile";
 import Loading from "../loading";
 
@@ -14,7 +14,7 @@ export default function RiderProfileScreen() {
     const { userId } = useRole();
     const { data, isLoading, refetch, isRefetching } = useRiderProfile(userId || "");
     const profile = data?.rider;
-    const branch = data?.branch
+    const branch = data?.branch || null;
     const assignedZones = data?.zones || [];
 
     if (isLoading) return <Loading text="Loading Profile..." />
