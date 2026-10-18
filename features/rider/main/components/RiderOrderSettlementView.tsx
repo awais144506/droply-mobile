@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Switch, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, User, MapPin, Phone, Package, Banknote, CheckCircle2, CreditCard, Wallet } from 'lucide-react-native';
+import { X, User, MapPin, Phone, Package, Banknote, CheckCircle2, CreditCard, Wallet, PhoneCall, MessageCircle } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
 
 interface SettlementPayload {
@@ -36,6 +36,27 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
     // Final Due: Order Total + Old Credit - The Advance amount they chose to use
     const cashDue = Math.max(order.totalAmount + previousCredit - actualAdvanceToDeduct, 0);
 
+    const handleCall = (phoneNumber: string) => {
+        const url = `tel:${phoneNumber}`;
+        Linking.openURL(url).catch((err) => console.error('Error opening dialer:', err));
+    };
+
+    const handleWhatsApp = (phoneNumber: string, customerName: string) => {
+        const formattedPhone = phoneNumber.replace(/[^0-9+]/g, '');
+        const message = encodeURIComponent(`Hi ${customerName}, Rider is outside please pick your order.`);
+        const url = `whatsapp://send?phone=${formattedPhone}&text=${message}`;
+
+        Linking.canOpenURL(url)
+            .then((supported) => {
+                if (!supported) {
+                    return Linking.openURL(`https://wa.me/${formattedPhone}?text=${message}`);
+                } else {
+                    return Linking.openURL(url);
+                }
+            })
+            .catch((err) => console.error('Error opening WhatsApp:', err));
+    };
+
     const handleComplete = () => {
         onComplete(order.id, {
             deductedAdvance: actualAdvanceToDeduct,
@@ -69,10 +90,30 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                                 <Text style={styles.customerName}>{order.customer.name}</Text>
                             </View>
                         </View>
-                        <View style={styles.contactRow}>
-                            <Phone size={16} color="#94a3b8" style={styles.iconMargin} />
-                            <Text style={styles.contactText}>{order.customer.phone}</Text>
+
+                        {/* Interactive Call & WhatsApp Action Row */}
+                        <View style={styles.contactActionsRow}>
+                            <View style={styles.actionButtonsGroup}>
+                                <TouchableOpacity
+                                    onPress={() => handleCall(order.customer.phone)}
+                                    style={styles.callButton}
+                                    activeOpacity={0.7}
+                                >
+                                    <PhoneCall size={14} color="#0284c7" strokeWidth={2.5} />
+                                    <Text style={styles.callButtonText}>Call</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={() => handleWhatsApp(order.customer.phone, order.customer.name)}
+                                    style={styles.whatsappButton}
+                                    activeOpacity={0.7}
+                                >
+                                    <MessageCircle size={14} color="#16a34a" strokeWidth={2.5} />
+                                    <Text style={styles.whatsappButtonText}>WhatsApp</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
+
                         <View style={styles.addressRow}>
                             <MapPin size={16} color="#94a3b8" style={styles.addressIcon} />
                             <Text style={styles.addressText}>{order.customer.address}</Text>
@@ -109,7 +150,7 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                         {discountAmount > 0 && (
                             <View style={styles.itemRow}>
                                 <Text style={styles.discountText}>Discount</Text>
-                                <Text style={styles.discountText}>- Rs {discountAmount}</Text>
+                                <Text style={styles.discountText}>Rs {discountAmount}</Text>
                             </View>
                         )}
                         <View style={styles.itemRow}>
@@ -220,7 +261,7 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                         </View>
                     </View>
 
-                    <View style={{ height: 40 }} /> {/* Bottom Padding for Scroll */}
+                    <View style={{ height: 40 }} />
                 </ScrollView>
 
                 {/* Footer Action */}
@@ -311,7 +352,56 @@ const styles = StyleSheet.create({
     customerName: {
         fontSize: 18, fontWeight: 'bold', color: '#0f172a',
     },
-    contactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    contactActionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
+        marginBottom: 12,
+    },
+    contactRowLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    actionButtonsGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    callButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: '#f0f9ff',
+        borderWidth: 1,
+        borderColor: '#bae6fd',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+    },
+    callButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#0284c7',
+    },
+    whatsappButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: '#f0fdf4',
+        borderWidth: 1,
+        borderColor: '#bbf7d0',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+    },
+    whatsappButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#16a34a',
+    },
     contactText: { color: '#475569', fontWeight: '500' },
     addressRow: { flexDirection: 'row', alignItems: 'flex-start' },
     addressIcon: { marginTop: 4, marginRight: 12 },
