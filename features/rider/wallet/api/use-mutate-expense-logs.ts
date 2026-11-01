@@ -10,7 +10,7 @@ export function useCreateExpenseLog(branchId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (data: ExpenseFormData) => logsApi.createExpense(api, branchId, data),
+        mutationFn: async (data: ExpenseFormData) => logsApi.createExpense(api, data),
         onSuccess: () => {
             Toast.show({
                 type: 'success',

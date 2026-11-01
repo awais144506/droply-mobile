@@ -1,8 +1,17 @@
+import React, { useMemo } from "react";
 import { Tabs } from "expo-router";
-import { Receipt, User } from "lucide-react-native";
-import { View, StyleSheet } from "react-native";
+import { Receipt, User, Truck } from "lucide-react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { useOrderRequests } from "@/features/management/orders/api/use-orders";
 
 export default function ManagementLayout() {
+  const { data: orders = [] } = useOrderRequests();
+
+  // Count how many order requests are currently PENDING
+  const pendingCount = useMemo(() => {
+    return orders.filter((order) => order.status === "PENDING").length;
+  }, [orders]);
+
   return (
     <Tabs
       screenOptions={{
@@ -37,8 +46,39 @@ export default function ManagementLayout() {
         options={{
           title: "Daily Sales",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconActiveBackground,
+              ]}
+            >
               <Receipt size={20} color={color} />
+            </View>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: "Orders",
+          tabBarIcon: ({ color, focused }) => (
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconActiveBackground,
+              ]}
+            >
+              <Truck size={20} color={color} />
+
+              {/* Red Pending Orders Badge */}
+              {pendingCount > 0 && (
+                <View style={styles.badgeContainer}>
+                  <Text style={styles.badgeText}>
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </Text>
+                </View>
+              )}
             </View>
           ),
         }}
@@ -49,7 +89,12 @@ export default function ManagementLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconActiveBackground,
+              ]}
+            >
               <User size={20} color={color} />
             </View>
           ),
@@ -61,14 +106,35 @@ export default function ManagementLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     height: 32,
     width: 56,
     borderRadius: 12,
-    overflow: 'hidden',
+    position: "relative",
   },
   iconActiveBackground: {
-    backgroundColor: '#bae6fd',
-  }
+    backgroundColor: "#bae6fd",
+  },
+  badgeContainer: {
+    position: "absolute",
+    top: -4,
+    right: 4,
+    backgroundColor: "#e11d48", // Rose-600 red
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#ffffff",
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 12,
+    textAlign: "center",
+  },
 });

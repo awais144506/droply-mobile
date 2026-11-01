@@ -6,7 +6,9 @@ import * as ImagePicker from "expo-image-picker";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import { useRole } from '@/lib/use-role';
 import { useRouter } from 'expo-router';
-import { profileDetailsStyles as styles } from '../style/profile-styles'; // Adjust path if needed
+import { profileDetailsStyles as styles } from '../style/profile-styles';
+import { useQueryClient } from "@tanstack/react-query"; // 🔥 Import query client hook
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Helper configuration function for dynamic role styling & icons
 const getRoleBadgeConfig = (roleStr: string) => {
@@ -39,6 +41,7 @@ const getRoleBadgeConfig = (roleStr: string) => {
 export const ProfileDetails = () => {
     const { user } = useUser();
     const { signOut } = useClerk();
+    const queryClient = useQueryClient();
     const { userName, role, userProfilePicture } = useRole();
     const [isUploading, setIsUploading] = useState(false);
     const router = useRouter();
@@ -102,7 +105,6 @@ export const ProfileDetails = () => {
             setIsUploading(false);
         }
     };
-
     const handleSignOut = () => {
         showAlert({
             title: "Log Out",
@@ -113,8 +115,14 @@ export const ProfileDetails = () => {
             onCancel: closeAlert,
             onConfirm: async () => {
                 closeAlert();
-                await signOut();
-                router.replace("/(auth)/sign-in");
+                try {
+                    queryClient.clear();
+                    await AsyncStorage.removeItem('REACT_QUERY_OFFLINE_CACHE');
+                    await signOut();
+                    router.replace("/(auth)/sign-in");
+                } catch (error) {
+                    console.error("Sign out cleanup failed:", error);
+                }
             },
         });
     };

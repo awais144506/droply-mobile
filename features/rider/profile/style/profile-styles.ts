@@ -139,64 +139,70 @@ export const branchSettingsStyles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         backgroundColor: '#ffffff',
-        borderRadius: 16, // rounded-2xl
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#f1f5f9', // slate-100
+        borderColor: '#f1f5f9',
         marginBottom: 16,
-        gap: 8,
+        gap: 16, // Handles spacing between logo and details cleanly
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
-        elevation: 1, // shadow-sm
+        elevation: 1,
+    },
+    logoWrapper: {
+        width: 64,
+        height: 64,
+        borderRadius: 32, // Or try 14 (squircle) if users upload wide banners
+        backgroundColor: '#f8fafc',
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        padding: 6, // Gives dynamic logos breathing room inside the circle
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden', // Ensures nothing bleeds outside the radius
     },
     logoImage: {
-        width: 64, // w-16
-        height: 64, // h-16
-        borderRadius: 32, // rounded-full
-        backgroundColor: '#f8fafc', // slate-50
-        marginRight: 16, // mr-4
-        borderWidth: 1,
-        borderColor: '#f1f5f9', // slate-100
+        width: '100%',
+        height: '100%',
     },
     fallbackLogoContainer: {
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: '#eff6ff', // blue-50
+        backgroundColor: '#eff6ff',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
         borderWidth: 1,
-        borderColor: '#dbeafe', // blue-100
+        borderColor: '#dbeafe',
     },
     detailsContainer: {
         flex: 1,
         justifyContent: 'center',
     },
     branchNameText: {
-        fontSize: 18, // text-lg
-        fontWeight: '700', // font-bold
-        color: '#1e293b', // slate-800
-        marginBottom: 4, // mb-1
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1e293b',
+        flex: 1, // Prevents long branch names from pushing out of the card
     },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6, // spacing between icon and text
-        marginBottom: 2,
+        gap: 6,
+        marginBottom: 4,
     },
     phoneText: {
-        fontSize: 14, // text-sm
-        fontWeight: '500', // font-medium
-        color: '#64748b', // slate-500
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#64748b',
         flex: 1,
     },
     addressText: {
-        fontSize: 12, // text-xs
-        fontWeight: '500', // font-medium
-        color: '#94a3b8', // slate-400
-        lineHeight: 16, // leading-tight
+        fontSize: 12,
+        fontWeight: '500',
+        color: '#94a3b8',
+        lineHeight: 16,
         flex: 1,
     }
 });

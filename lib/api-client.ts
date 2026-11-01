@@ -27,10 +27,13 @@ export function useApiClient() {
     instance.interceptors.response.use(
       (response) => response,
       async (error) => {
-        // 🔥 1. Extract custom NestJS backend message if available
+        // 🔥 Print exact backend failure status and message to Metro console
+        console.log("❌ API ERROR STATUS:", error.response?.status);
+        console.log("❌ API ERROR DATA:", error.response?.data);
+
+        // 1. Extract custom NestJS backend message if available
         const backendMessage = error.response?.data?.message;
         if (backendMessage) {
-          // NestJS validation errors can sometimes be arrays of strings
           error.message = Array.isArray(backendMessage) ? backendMessage[0] : backendMessage;
         }
 

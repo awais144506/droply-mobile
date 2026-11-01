@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Tabs, usePathname } from "expo-router";
-import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
+import { Map, ClipboardList, Wallet, User, Bike, UserPlus2 } from "lucide-react-native";
 
 export default function RiderLayout() {
   const pathname = usePathname();
@@ -61,13 +61,13 @@ export default function RiderLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: "Orders",
+          title: "Customers",
           tabBarIcon: ({ color, focused }) => {
             const active = focused || isOrdersActive;
             const iconColor = active ? "#0284c7" : color;
             return (
               <View style={[styles.iconContainer, active && styles.iconActiveBackground]}>
-                <Bike size={20} color={iconColor} />
+                <UserPlus2 size={20} color={iconColor} />
               </View>
             );
           },

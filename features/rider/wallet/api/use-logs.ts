@@ -8,7 +8,7 @@ export function useRiderLogs(branchId: string, filterDate?: string) {
 
     return useQuery({
         queryKey: [...logKeys.list(branchId), filterDate],
-        queryFn: async () => logsApi.getAllLogs(api, branchId, filterDate),
+        queryFn: async () => logsApi.getAllLogs(api, filterDate),
         enabled: !!branchId,
     });
 }

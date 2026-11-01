@@ -3,7 +3,7 @@ import { ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRole } from "@/lib/use-role";
 import { ProfileDetails } from "@/features/rider/profile/components/ProfileDetails";
-import { Information } from "@/features/rider/profile/components/Information";
+import { Information } from '@/features/rider/profile/components/Information';
 import { AssignedZones } from "@/features/rider/profile/components/AssignedZones";
 import { Footer } from "@/features/rider/profile/components/Footer";
 import BranchSettings from '@/features/rider/profile/components/BranchSettings';

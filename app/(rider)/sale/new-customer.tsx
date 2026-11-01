@@ -15,7 +15,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { customerSchema, CustomerFormData } from "@/features/rider/orders/schema/customer-schema";
 import { ArrowLeft, User, UserPlus, Building2, Send } from "lucide-react-native";
-import PhoneInput from "react-native-phone-number-input"; // 👈 Using the original package
+import PhoneInput from "react-native-phone-number-input";
 import { useRequestNewCustomer } from "@/features/rider/orders/api/use-customer";
 import { useRole } from "@/lib/use-role";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
@@ -24,9 +24,8 @@ import { addCustomerStyles as styles } from "@/features/rider/orders/style/order
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();
-  const { userId, branchId } = useRole();
+  const { branchId } = useRole();
 
-  // 🔥 1. Create the reference to access built-in methods
   const phoneRef = useRef<PhoneInput>(null);
 
   const { mutate: createRequest, isPending } = useRequestNewCustomer(branchId);
@@ -72,8 +71,6 @@ export default function AddNewCustomerScreen() {
 
     const payload = {
       ...data,
-      requestedById: userId || "",
-      branchId,
     };
 
     showAlert({

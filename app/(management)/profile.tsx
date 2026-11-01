@@ -8,9 +8,8 @@ import { BranchStatsCard } from "@/features/management/profile/components/Branch
 import { useManagerProfile } from "@/features/management/profile/api/use-manager-profile";
 import ProfileDetailsInformation from "@/features/management/profile/components/ProfileDetails";
 
-type Props = {}
 
-const Profile = (props: Props) => {
+const Profile = () => {
   const { data, isLoading, refetch, isRefetching } = useManagerProfile();
 
   if (isLoading && !data) {

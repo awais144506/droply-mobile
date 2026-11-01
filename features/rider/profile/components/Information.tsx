@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { Lock, User, Mail, Phone, CreditCard, CalendarDays } from 'lucide-react-native';
+import { Lock, User, Mail, Phone, CreditCard, CalendarDays, Bike } from 'lucide-react-native';
 import { Rider } from '../types/profile';
 import { informationStyles as styles } from '../style/profile-styles'; // Adjust path if needed
 
@@ -14,8 +14,11 @@ export const Information = ({ profile }: RiderData) => {
         email = "No Email Address",
         phone = "No Phone Number",
         cnic = "No CNIC Provided",
-        joiningDate
+        joiningDate,
+        assignedVehicles,
     } = profile || {};
+
+    const vehicleName = assignedVehicles?.[0]?.registration || "";
 
     const formattedDate = joiningDate
         ? new Date(joiningDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -43,6 +46,7 @@ export const Information = ({ profile }: RiderData) => {
                 <InfoRow icon={Phone} label="Phone Number" value={phone} />
                 <InfoRow icon={CreditCard} label="CNIC Number" value={cnic} />
                 <InfoRow icon={CalendarDays} label="Joining Date" value={formattedDate} />
+                <InfoRow icon={Bike} label="Vehicle Assigned" value={vehicleName} />
             </View>
         </View>
     );

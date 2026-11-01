@@ -18,7 +18,7 @@ export function useDailySalesSummary(
 
   return useAppQuery({
     queryKey: salesKeys.summary(branchId || '', params),
-    queryFn: async () => salesApi.getDailySalesSummary(api, branchId!, params),
+    queryFn: async () => salesApi.getDailySalesSummary(api, params),
     enabled: Boolean(branchId),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,

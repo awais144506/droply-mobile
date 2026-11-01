@@ -14,17 +14,23 @@ const BranchSettings = ({ branch }: BranchSettingsData) => {
     return (
         <View style={styles.card}>
             {branch?.logoUrl ? (
-                <Image source={{ uri: branch.logoUrl }} style={styles.logoImage} resizeMode="cover" />
+                <View style={styles.logoWrapper}>
+                    <Image
+                        source={{ uri: branch.logoUrl }}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
+                </View>
             ) : (
                 <View style={styles.fallbackLogoContainer}>
-                    <Building2 size={13} color="#3b82f6" strokeWidth={2.2} />
+                    <Building2 size={20} color="#3b82f6" strokeWidth={2.2} />
                 </View>
             )}
 
             <View style={styles.detailsContainer}>
                 <View style={styles.infoRow}>
                     <Building2 size={13} color="#64748b" strokeWidth={2.2} />
-                    <Text style={styles.branchNameText}>
+                    <Text style={styles.branchNameText} numberOfLines={1}>
                         {branch?.name || 'N/A'}
                     </Text>
                 </View>

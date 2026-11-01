@@ -36,37 +36,37 @@ export default function OrdersScreen() {
     return customDate.toISOString();
   };
 
-  const { data: orderList = [], isLoading, refetch, isRefetching } = useOrderList(getTargetDateString());
+  // const { data: orderList = [], isLoading, refetch, isRefetching } = useOrderList(getTargetDateString());
 
-  const { mutate: deleteMutation, isPending } = useDeleteOrder(branchId);
+  // const { mutate: deleteMutation, isPending } = useDeleteOrder(branchId);
 
-  const handleFilterChange = (filter: DateFilterType, date?: Date) => {
-    setActiveFilter(filter);
-    if (date) setCustomDate(date);
-  };
+  // const handleFilterChange = (filter: DateFilterType, date?: Date) => {
+  //   setActiveFilter(filter);
+  //   if (date) setCustomDate(date);
+  // };
 
-  // 1. Opens the Custom Alert
-  const handleDeleteRequest = (orderId: string) => {
-    setOrderToDelete(orderId);
-    setIsAlertVisible(true);
-  };
+  // // 1. Opens the Custom Alert
+  // const handleDeleteRequest = (orderId: string) => {
+  //   setOrderToDelete(orderId);
+  //   setIsAlertVisible(true);
+  // };
 
-  // 2. Confirms and fires the mutation
-  const confirmDelete = () => {
-    if (orderToDelete) {
-      deleteMutation(orderToDelete);
-    }
-    setIsAlertVisible(false);
-    setOrderToDelete(null);
-  };
+  // // 2. Confirms and fires the mutation
+  // const confirmDelete = () => {
+  //   if (orderToDelete) {
+  //     deleteMutation(orderToDelete);
+  //   }
+  //   setIsAlertVisible(false);
+  //   setOrderToDelete(null);
+  // };
 
-  // 3. Cancels and hides the alert
-  const cancelDelete = () => {
-    setIsAlertVisible(false);
-    setOrderToDelete(null);
-  };
+  // // 3. Cancels and hides the alert
+  // const cancelDelete = () => {
+  //   setIsAlertVisible(false);
+  //   setOrderToDelete(null);
+  // };
 
-  if (isPending) return <Loading text="Deleting Order..." />
+  // if (isPending) return <Loading text="Deleting Order..." />
 
 
   return (
@@ -76,7 +76,7 @@ export default function OrdersScreen() {
           <Bike size={20} color="#0284c7" />
         </View>
         <View>
-          <Text style={styles.headerTitle}>Orders Management</Text>
+          <Text style={styles.headerTitle}>Customers Management</Text>
           <Text style={styles.headerSubtitle}>Manage & Review</Text>
         </View>
       </View>
@@ -85,18 +85,10 @@ export default function OrdersScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            colors={["#0284c7"]}
-            tintColor="#0284c7"
-          />
-        }
       >
         {/* Action Cards */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity onPress={() => router.push("/sale/new-order")} style={styles.actionCardPrimary}>
+          {/* <TouchableOpacity onPress={() => router.push("/sale/new-order")} style={styles.actionCardPrimary}>
             <View style={styles.actionIconPrimary}>
               <ShoppingCart size={20} color="#ffffff" />
             </View>
@@ -105,7 +97,7 @@ export default function OrdersScreen() {
               <Text style={styles.actionSubtitlePrimary}>Point of Sale</Text>
               <ArrowRight size={10} color="#bae6fd" />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity onPress={() => router.push("/sale/new-customer")} style={styles.actionCardSecondary}>
             <View style={styles.actionIconSecondary}>
@@ -119,8 +111,8 @@ export default function OrdersScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* The Reusable Component */}
-        <DateFilterBar
+
+        {/* <DateFilterBar
           activeFilter={activeFilter}
           customDate={customDate}
           onFilterChange={handleFilterChange}
@@ -152,10 +144,10 @@ export default function OrdersScreen() {
               />
             ))}
           </View>
-        )}
+        )} */}
       </ScrollView>
 
-      <CustomAlert
+      {/* <CustomAlert
         visible={isAlertVisible}
         title="Delete Order"
         message="Are you sure you want to delete this pending order? This action cannot be undone."
@@ -164,7 +156,7 @@ export default function OrdersScreen() {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
         isDestructive={true}
-      />
+      /> */}
     </SafeAreaView>
   );
 }

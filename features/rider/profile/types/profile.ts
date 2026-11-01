@@ -12,6 +12,9 @@ export interface Rider {
     email: string;
     cnic: string;
     joiningDate: string;
+    assignedVehicles: {
+        registration: string
+    }[]
 }
 
 export interface AssignedZones {
