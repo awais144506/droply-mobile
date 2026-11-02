@@ -3,7 +3,6 @@ import { RiderProfile } from "../types/profile";
 
 export const apiProfile = {
     getRiderProfile: async (api: AxiosInstance): Promise<RiderProfile> => {
-        console.log("🔥 CALLING getRiderProfile API METHOD..."); // Check if this prints in your terminal/Metro bundler
         const response = await api.get(`/rider/mobile/profile`);
         return response.data;
     },
