@@ -4,6 +4,7 @@ import { RiderActiveOrder } from '../types/orders';
 export const ordersApi = {
   getTodayActiveOrders: async (api: AxiosInstance): Promise<RiderActiveOrder[]> => {
     const response = await api.get('/rider/mobile/orders/today');
+    console.log('HERE IS ORDERS',response.data)
     return response.data;
   },
 

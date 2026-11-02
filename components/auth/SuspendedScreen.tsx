@@ -1,29 +1,34 @@
 // src/components/auth/SuspendedScreen.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Linking, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
-import { ShieldAlert, LogOut, Building2, UserX, MapPin, Mail, MessageCircle } from 'lucide-react-native';
+import { ShieldAlert, LogOut, UserX, Mail, MessageCircle } from 'lucide-react-native';
 import { useRole } from '@/lib/use-role';
-import { useRiderProfile } from '@/features/rider/profile/api/use-profile';
+import { useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from 'expo-router';
 
 export default function SuspendedScreen() {
+    const queryClient = useQueryClient();
     const { signOut } = useAuth();
-    const { branchId, userName, role, userId } = useRole();
-    const { data, isLoading } = useRiderProfile(userId || "");
+    const { userName, role } = useRole();
+    const router = useRouter();
 
-    const branch = data?.branch;
 
     const handleLogout = async () => {
         try {
+            queryClient.clear();
+            await AsyncStorage.removeItem('REACT_QUERY_OFFLINE_CACHE');
             await signOut();
+            router.replace("/(auth)/sign-in");
         } catch (error) {
-            console.error("Logout failed", error);
+            console.error("Sign out cleanup failed:", error);
         }
     };
 
     const handleWhatsApp = () => {
-        Linking.openURL('https://wa.me/923116631476');
+        Linking.openURL('https://wa.me/#');
     };
     const handleEmail = () => {
         Linking.openURL('mailto:help@dedroply.pk');
@@ -53,39 +58,6 @@ export default function SuspendedScreen() {
                         <Text style={styles.statusText}>Suspended</Text>
                     </View>
                 </View>
-
-                {/* Show branch info if applicable */}
-                {branchId && (
-                    <View style={[styles.cardRow, styles.alignStart]}>
-                        <View style={styles.cardIconWrapper}>
-                            <Building2 size={20} color="#64748b" />
-                        </View>
-                        <View style={styles.branchInfoWrapper}>
-                            <Text style={styles.cardLabelMargin}>Assigned Branch</Text>
-
-                            {isLoading ? (
-                                <View style={styles.loadingRow}>
-                                    <ActivityIndicator size="small" color="#94a3b8" />
-                                    <Text style={styles.loadingText}>Loading details...</Text>
-                                </View>
-                            ) : (
-                                <View>
-                                    <Text style={styles.branchName} numberOfLines={1}>
-                                        {branch?.displayName || branchId}
-                                    </Text>
-                                    {branch?.displayAddress && (
-                                        <View style={styles.addressRow}>
-                                            <MapPin size={12} color="#94a3b8" />
-                                            <Text style={styles.addressText} numberOfLines={2}>
-                                                {branch.displayAddress}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                )}
 
                 <Text style={styles.helpTitle}>Need Help?</Text>
                 <Text style={styles.helpDesc}>

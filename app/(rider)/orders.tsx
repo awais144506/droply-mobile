@@ -1,83 +1,38 @@
-/* eslint-disable import/no-named-as-default */
 // src/app/(rider)/orders/index.tsx
-import { useState } from "react";
+import { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ShoppingCart, UserPlus, ArrowRight, Bike, Package } from "lucide-react-native";
-import { useOrderList } from "@/features/rider/orders/api/use-order";
-import { useDeleteOrder } from "@/features/rider/orders/api/use-mutate-order";
-import { DateFilterBar, DateFilterType } from "@/components/ui/DateFilterBar";
-import OrderCard from "@/features/rider/orders/components/OrderCard";
-import { CustomAlert } from "@/components/ui/CustomAlert";
-import { useRole } from "@/lib/use-role";
-import { ordersScreenStyles as styles } from "@/features/rider/orders/style/order-style";
-import Loading from "../loading";
+import { ShoppingCart, UserPlus, ArrowRight, Bike, Clock, CheckCircle2, MapPin, Phone, User, Package, Calendar } from "lucide-react-native";
+
+import { ordersScreenStyles as styles, orderCardStyles } from "@/features/rider/orders/style/order-style";
+import { useOrderRequests } from "@/features/management/orders/api/use-orders";
+import { CustomerOrderRequest } from "@/features/management/orders/types/requests";
 
 export default function OrdersScreen() {
+  const { data: orders = [], isLoading, refetch, isRefetching } = useOrderRequests();
   const router = useRouter();
-  const { branchId } = useRole();
-  // Date State
-  const [activeFilter, setActiveFilter] = useState<DateFilterType>('today');
-  const [customDate, setCustomDate] = useState(new Date());
 
-  // Alert State
-  const [isAlertVisible, setIsAlertVisible] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
-
-  // Calculate target date for the backend
-  const getTargetDateString = () => {
-    if (activeFilter === 'today') return new Date().toISOString();
-    if (activeFilter === 'tomorrow') {
-      const tmrw = new Date();
-      tmrw.setDate(tmrw.getDate() + 1);
-      return tmrw.toISOString();
+  const stats = useMemo(() => {
+    let pendingCount = 0;
+    let totalValue = 0;
+    for (const order of orders) {
+      if (order.status === 'PENDING') pendingCount++;
+      if (order.status !== 'CANCELLED') totalValue += Number(order.total || 0);
     }
-    return customDate.toISOString();
-  };
-
-  // const { data: orderList = [], isLoading, refetch, isRefetching } = useOrderList(getTargetDateString());
-
-  // const { mutate: deleteMutation, isPending } = useDeleteOrder(branchId);
-
-  // const handleFilterChange = (filter: DateFilterType, date?: Date) => {
-  //   setActiveFilter(filter);
-  //   if (date) setCustomDate(date);
-  // };
-
-  // // 1. Opens the Custom Alert
-  // const handleDeleteRequest = (orderId: string) => {
-  //   setOrderToDelete(orderId);
-  //   setIsAlertVisible(true);
-  // };
-
-  // // 2. Confirms and fires the mutation
-  // const confirmDelete = () => {
-  //   if (orderToDelete) {
-  //     deleteMutation(orderToDelete);
-  //   }
-  //   setIsAlertVisible(false);
-  //   setOrderToDelete(null);
-  // };
-
-  // // 3. Cancels and hides the alert
-  // const cancelDelete = () => {
-  //   setIsAlertVisible(false);
-  //   setOrderToDelete(null);
-  // };
-
-  // if (isPending) return <Loading text="Deleting Order..." />
-
+    return { totalCount: orders.length, pendingCount, totalValue };
+  }, [orders]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerIconContainer}>
           <Bike size={20} color="#0284c7" />
         </View>
         <View>
-          <Text style={styles.headerTitle}>Customers Management</Text>
-          <Text style={styles.headerSubtitle}>Manage & Review</Text>
+          <Text style={styles.headerTitle}>Orders Management</Text>
+          <Text style={styles.headerSubtitle}>Manage Customer/Orders</Text>
         </View>
       </View>
 
@@ -85,78 +40,196 @@ export default function OrdersScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0284c7" />
+        }
       >
-        {/* Action Cards */}
+        {/* Full-Width Action Button ("Add Customer") */}
         <View style={styles.actionsRow}>
-          {/* <TouchableOpacity onPress={() => router.push("/sale/new-order")} style={styles.actionCardPrimary}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push("/sale/new-customer")}
+            style={styles.actionCardFull}
+          >
             <View style={styles.actionIconPrimary}>
-              <ShoppingCart size={20} color="#ffffff" />
+              <UserPlus size={22} color="#ffffff" />
             </View>
-            <Text style={styles.actionTitle}>New Order</Text>
-            <View style={styles.actionSubtitleRow}>
-              <Text style={styles.actionSubtitlePrimary}>Point of Sale</Text>
-              <ArrowRight size={10} color="#bae6fd" />
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Add New Customer</Text>
+              <Text style={styles.actionSubtitlePrimary}>Register a new customer profile instantly</Text>
             </View>
-          </TouchableOpacity> */}
-
-          <TouchableOpacity onPress={() => router.push("/sale/new-customer")} style={styles.actionCardSecondary}>
-            <View style={styles.actionIconSecondary}>
-              <UserPlus size={20} color="#ffffff" />
-            </View>
-            <Text style={styles.actionTitle}>Add Customer</Text>
-            <View style={styles.actionSubtitleRow}>
-              <Text style={styles.actionSubtitleSecondary}>Register New</Text>
-              <ArrowRight size={10} color="#cbd5e1" />
+            <View style={styles.actionArrowWrapper}>
+              <ArrowRight size={16} color="#ffffff" />
             </View>
           </TouchableOpacity>
         </View>
 
-
-        {/* <DateFilterBar
-          activeFilter={activeFilter}
-          customDate={customDate}
-          onFilterChange={handleFilterChange}
-        />
-
+        {/* Section Divider */}
         <View style={styles.divider} />
 
-        <Text style={styles.listHeader}>
-          {activeFilter === 'today' ? "Today's Orders" : "Filtered Orders"} ({orderList.length})
-        </Text>
+        {/* Summary Grid Strip */}
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryLabel}>Requests</Text>
+            <Text style={styles.summaryValue}>{stats.totalCount}</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryLabel}>Pending</Text>
+            <Text style={[styles.summaryValue, { color: '#d97706' }]}>{stats.pendingCount}</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryLabel}>Est. Value</Text>
+            <Text style={[styles.summaryValue, { color: '#0284c7' }]}>Rs {stats.totalValue.toLocaleString()}</Text>
+          </View>
+        </View>
 
+        {/* Section Title */}
+        <Text style={styles.listHeader}>Incoming Order Requests</Text>
+
+        {/* Orders List / Loading / Empty State */}
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#0284c7" />
-            <Text style={styles.loadingText}>Loading orders...</Text>
+            <Text style={styles.loadingText}>Fetching order requests...</Text>
           </View>
-        ) : orderList.length === 0 ? (
+        ) : orders.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Package size={32} color="#cbd5e1" style={styles.emptyIcon} />
-            <Text style={styles.emptyText}>No orders found</Text>
+            <View style={styles.emptyIcon}>
+              <ShoppingCart size={32} color="#94a3b8" />
+            </View>
+            <Text style={styles.emptyText}>No pending order requests found.</Text>
           </View>
         ) : (
           <View style={styles.listContainer}>
-            {orderList.map((order: any) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onDelete={() => handleDeleteRequest(order.id)}
-              />
-            ))}
-          </View>
-        )} */}
-      </ScrollView>
+            {orders.map((order: CustomerOrderRequest) => {
+              const isPending = order.status === "PENDING";
+              return (
+                <View key={order.id} style={orderCardStyles.cardBase}>
 
-      {/* <CustomAlert
-        visible={isAlertVisible}
-        title="Delete Order"
-        message="Are you sure you want to delete this pending order? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-        isDestructive={true}
-      /> */}
+                  {/* Top Order Meta Row */}
+                  <View style={orderCardStyles.headerRow}>
+                    <View style={orderCardStyles.orderIdBadge}>
+                      <Package size={12} color="#0284c7" />
+                      <Text style={orderCardStyles.orderNoText}>
+                        #{order.orderId || order.id.slice(0, 6)}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        orderCardStyles.statusBadgeBase,
+                        isPending
+                          ? orderCardStyles.statusBadgePending
+                          : orderCardStyles.statusBadgeDone,
+                      ]}
+                    >
+                      {isPending ? (
+                        <Clock size={10} color="#b45309" />
+                      ) : (
+                        <CheckCircle2 size={10} color="#047857" />
+                      )}
+                      <Text
+                        style={[
+                          orderCardStyles.statusTextBase,
+                          isPending
+                            ? orderCardStyles.statusTextPending
+                            : orderCardStyles.statusTextDone,
+                        ]}
+                      >
+                        {order.status}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Customer Information Block */}
+                  <View style={orderCardStyles.infoContainer}>
+                    <View style={orderCardStyles.customerRow}>
+                      <View style={orderCardStyles.customerNameRow}>
+                        <View style={orderCardStyles.avatarMini}>
+                          <User size={12} color="#4338ca" />
+                        </View>
+                        <Text style={orderCardStyles.customerNameText} numberOfLines={1}>
+                          {order.customer?.name || "Walk-in Customer"}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {order.customer?.phone && (
+                      <View style={orderCardStyles.phoneRow}>
+                        <Phone size={12} color="#475569" />
+                        <Text style={orderCardStyles.phoneText}>{order.customer.phone}</Text>
+                      </View>
+                    )}
+
+                    {order.customer?.address && (
+                      <View style={orderCardStyles.addressRow}>
+                        <MapPin size={12} color="#64748b" style={orderCardStyles.addressIcon} />
+                        <Text style={orderCardStyles.addressText} numberOfLines={2}>
+                          {order.customer.address}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Items Summary Section */}
+                  {order.items && order.items.length > 0 && (
+                    <View style={orderCardStyles.itemsContainer}>
+                      <Text style={orderCardStyles.itemsHeaderLabel}>Requested Products</Text>
+                      {order.items.map((item) => (
+                        <View key={item.id} style={orderCardStyles.itemRow}>
+                          <Text style={orderCardStyles.itemNameText} numberOfLines={1}>
+                            • {item.product?.name || item.name}
+                          </Text>
+                          <Text style={orderCardStyles.itemQtyText}>
+                            x{item.quantity} <Text style={orderCardStyles.itemPriceText}>(Rs {item.price})</Text>
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Notes Section if available */}
+                  {order.notes && (
+                    <View style={orderCardStyles.notesBox}>
+                      <Text style={orderCardStyles.notesLabel}>Notes: </Text>
+                      <Text style={orderCardStyles.notesText}>{order.notes}</Text>
+                    </View>
+                  )}
+
+                  {/* Footer Box with Timestamps and Total */}
+                  <View style={orderCardStyles.footerBox}>
+                    <View style={orderCardStyles.timeRow}>
+                      <View style={orderCardStyles.footerItemWrapper}>
+                        <Calendar size={12} color="#94a3b8" />
+                        <View>
+                          <Text style={orderCardStyles.footerLabel}>Schedule Date</Text>
+                          <Text style={orderCardStyles.timeValue}>
+                            {order.scheduleDate
+                              ? new Date(order.scheduleDate).toLocaleDateString('en-PK', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })
+                              : "Immediate"}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={orderCardStyles.totalBox}>
+                      <Text style={orderCardStyles.footerLabel}>Total Amount</Text>
+                      <Text style={orderCardStyles.totalValue}>
+                        Rs {Number(order.total || 0).toLocaleString()}
+                      </Text>
+                    </View>
+                  </View>
+
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }

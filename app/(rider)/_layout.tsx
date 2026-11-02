@@ -1,9 +1,17 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { View, StyleSheet, Text } from "react-native";
 import { Tabs, usePathname } from "expo-router";
-import { Map, ClipboardList, Wallet, User, Bike, UserPlus2 } from "lucide-react-native";
+import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
+import { useOrderRequests } from "@/features/management/orders/api/use-orders";
 
 export default function RiderLayout() {
+  const { data: orders = [] } = useOrderRequests();
+
+  // Count how many order requests are currently PENDING
+  const pendingCount = useMemo(() => {
+    return orders.filter((order) => order.status === "PENDING").length;
+  }, [orders]);
+
   const pathname = usePathname();
   const isOrdersActive = pathname.includes('/orders') || pathname.includes('/sale');
 
@@ -61,13 +69,28 @@ export default function RiderLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: "Customers",
+          title: "Orders",
+          // Force active tint color if isOrdersActive is true
+          tabBarActiveTintColor: isOrdersActive ? "#0284c7" : undefined,
           tabBarIcon: ({ color, focused }) => {
             const active = focused || isOrdersActive;
-            const iconColor = active ? "#0284c7" : color;
             return (
-              <View style={[styles.iconContainer, active && styles.iconActiveBackground]}>
-                <UserPlus2 size={20} color={iconColor} />
+              <View
+                style={[
+                  styles.iconContainer,
+                  active && styles.iconActiveBackground,
+                ]}
+              >
+                <Bike size={20} color={active ? "#0284c7" : color} />
+
+                {/* Red Pending Orders Badge */}
+                {pendingCount > 0 && (
+                  <View style={styles.badgeContainer}>
+                    <Text style={styles.badgeText}>
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           },
@@ -98,21 +121,41 @@ export default function RiderLayout() {
 
       <Tabs.Screen name="deliver/[stopId]" options={{ href: null }} />
       <Tabs.Screen name="sale/new-customer" options={{ href: null }} />
-      <Tabs.Screen name="sale/new-order" options={{ href: null }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     height: 32,
     width: 56,
     borderRadius: 12,
-    overflow: 'hidden',
+    position: "relative",
   },
   iconActiveBackground: {
-    backgroundColor: '#bae6fd',
-  }
+    backgroundColor: "#bae6fd",
+  },
+  badgeContainer: {
+    position: "absolute",
+    top: -4,
+    right: 4,
+    backgroundColor: "#e11d48", // Rose-600 red
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#ffffff",
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 12,
+    textAlign: "center",
+  },
 });

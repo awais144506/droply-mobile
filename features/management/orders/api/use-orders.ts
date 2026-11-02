@@ -12,7 +12,7 @@ export function useOrderRequests(branchId?: string) {
 
   return useAppQuery({
     queryKey: orderRequestKeys.byBranch(branchId),
-    queryFn: async () => orderApi.getAllOrderRequests(api, branchId),
+    queryFn: async () => orderApi.getAllOrderRequests(api),
     staleTime: 1000 * 60 * 1,
   });
 }

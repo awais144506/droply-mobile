@@ -20,7 +20,7 @@ import { useRequestNewCustomer } from "@/features/rider/orders/api/use-customer"
 import { useRole } from "@/lib/use-role";
 import { CustomAlert, CustomAlertProps } from "@/components/ui/CustomAlert";
 import Loading from "@/app/loading";
-import { addCustomerStyles as styles } from "@/features/rider/orders/style/order-style";
+import { addCustomerStyles as styles } from "@/features/rider/orders/style/customer-style";
 
 export default function AddNewCustomerScreen() {
   const router = useRouter();
