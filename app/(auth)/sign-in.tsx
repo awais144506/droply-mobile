@@ -141,10 +141,6 @@ export default function SignInScreen() {
           <View style={styles.portalBadge}>
             <Text style={styles.portalBadgeText}>Droply Mobile Portal</Text>
           </View>
-
-          <Text style={styles.titleText}>
-            {!pendingVerification ? "Welcome Back" : "Verify Your Identity"}
-          </Text>
           <Text style={styles.subtitleText}>
             {!pendingVerification
               ? "Sign in with your owner/manager/rider email to access your workspace."
