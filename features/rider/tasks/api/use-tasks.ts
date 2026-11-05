@@ -6,12 +6,12 @@ import { UpdateTaskPayload } from "../types/task";
 import Toast from "react-native-toast-message";
 
 // Fetch all tasks
-export const useTasks = (branchId: string) => {
+export const useTasks = (branchId?: string) => {
     const api = useApiClient();
 
     return useQuery({
-        queryKey: tasksKeys.lists(branchId),
-        queryFn: () => tasksService.getAll(api, branchId),
+        queryKey: tasksKeys.all,
+        queryFn: () => tasksService.getAll(api),
         enabled: !!branchId,
     });
 };

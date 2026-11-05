@@ -6,7 +6,7 @@ export const customerService = {
         api: AxiosInstance,
         payload: CreateCustomerRequestPayload
     ) => {
-        const response = await api.post("/rider/mobile/request", payload);
+        const response = await api.post("/rider/orders/request", payload);
         return response.data;
     },
 };

@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-// Use your NestJS backend URL (e.g., your local IP for testing on physical devices, or your production URL)
-const BACKEND_URL = 'http://192.168.1.6:4000'; // Change this to your local IP/host
+const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL
 
 export function useRiderSocket(isRiding: boolean, riderId?: string) {
   const socketRef = useRef<Socket | null>(null);

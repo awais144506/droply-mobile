@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { View, Alert, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { RefreshCw } from 'lucide-react-native';
-import { useTodayActiveOrders,useUpdateOrderStatus } from '@/features/rider/main/api/use-rider-orders';
+import { RefreshCw, Power } from 'lucide-react-native';
+import { useTodayActiveOrders, useUpdateOrderStatus } from '@/features/rider/main/api/use-rider-orders';
 import { useRiderLocation } from '@/features/rider/main/api/use-rider-location';
 import { getDistanceInMeters, formatDistance } from '@/utils/locationUtils';
 import { useRiderSocket } from '@/features/rider/main/api/use-rider-socket';
@@ -16,7 +16,6 @@ export default function MainScreen() {
   const { user } = useUser();
   const { data: orders = [], refetch, isFetching } = useTodayActiveOrders();
   const updateOrderStatus = useUpdateOrderStatus();
-
 
   // State Management
   const hasActiveOrder = orders.some(o => o.status === 'ON_ROUTE' || o.status === 'ARRIVED');
@@ -87,7 +86,6 @@ export default function MainScreen() {
     }
   };
 
-// 🔥 1. Add settlementData as the 3rd parameter here
   const handleUpdateOrderStatus = (
     orderId: string,
     status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED',
@@ -98,7 +96,6 @@ export default function MainScreen() {
     }
   ) => {
     updateOrderStatus.mutate(
-      // 🔥 2. Pass it into the mutate payload here!
       { orderId, status, settlementData },
       {
         onSuccess: () => {
@@ -122,13 +119,26 @@ export default function MainScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
 
-        {/* Floating Refresh Button */}
-        <View style={styles.refreshContainer}>
+        {/* Top-Left Controls Container (Shift On/Off Toggle & Refresh Button) */}
+        <View style={styles.topLeftControls}>
+          {/* Shift Start/Stop On-Off Button */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setIsRiding(prev => !prev)}
+            style={[
+              styles.controlButton,
+              { backgroundColor: isRiding ? '#10b981' : '#1e293b' }
+            ]}
+          >
+            <Power size={20} color="#ffff" />
+          </TouchableOpacity>
+
+          {/* Refresh Button */}
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => refetch()}
             disabled={isFetching}
-            style={styles.refreshButton}
+            style={styles.controlButton}
           >
             {isFetching ? (
               <ActivityIndicator size="small" color="#ffff" />
@@ -191,13 +201,15 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  refreshContainer: {
+  topLeftControls: {
     position: 'absolute',
-    top: 16, // Adjusted to sit cleanly at the top right of the map
+    top: 16,
     left: 20,
+    flexDirection:'column',
+    gap: 12,
     zIndex: 30,
   },
-  refreshButton: {
+  controlButton: {
     backgroundColor: '#1e293b',
     width: 44,
     height: 44,

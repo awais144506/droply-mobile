@@ -279,7 +279,7 @@ export default function ManagementHomeScreen() {
             {alerts.items.length === 0 ? (
               <View style={styles.emptyAlertCard}>
                 <Text style={styles.emptyAlertText}>
-                  All branch inventory levels are healthy! 🎉
+                  All branch inventory levels are healthy!
                 </Text>
               </View>
             ) : (

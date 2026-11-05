@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Wallet, CalendarDays, Package, Box, XCircle } from 'lucide-react-native';
+import { Wallet, CalendarDays, Package, XCircle } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { walletSummaryDetailsStyle as styles } from '../style/log-style';
 
@@ -82,19 +82,6 @@ export default function WalletSummaryCard({ date }: SummaryCardProps) {
               <Text style={[styles.metricValue, { color: '#e11d48' }]}>
                 {ledgerData.deliveriesCancelled} Orders
               </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Returns / Empties (Rendered ONLY if greater than 0) */}
-        {ledgerData.returnsCount > 0 && (
-          <View style={styles.metricItem}>
-            <View style={[styles.metricIconWrapper, styles.iconEmpties]}>
-              <Box size={14} color="#fbbf24" />
-            </View>
-            <View>
-              <Text style={styles.metricLabel}>Returns</Text>
-              <Text style={styles.metricValue}>{ledgerData.returnsCount} Items</Text>
             </View>
           </View>
         )}

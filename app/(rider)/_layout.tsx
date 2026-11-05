@@ -3,17 +3,40 @@ import { View, StyleSheet, Text } from "react-native";
 import { Tabs, usePathname } from "expo-router";
 import { Map, ClipboardList, Wallet, User, Bike } from "lucide-react-native";
 import { useOrderRequests } from "@/features/management/orders/api/use-orders";
+import { useTodayActiveOrders } from "@/features/rider/main/api/use-rider-orders";
+import { useTasks } from "@/features/rider/tasks/api/use-tasks";
 
 export default function RiderLayout() {
   const { data: orders = [] } = useOrderRequests();
+  // Fetch active route orders/stops
+  const { data: activeOrders = [] } = useTodayActiveOrders();
+  // Fetch tasks data
+  const { data: tasks = [] } = useTasks();
 
-  // Count how many order requests are currently PENDING
-  const pendingCount = useMemo(() => {
+  // 1. Pending count for Orders tab (from your existing code)
+  const pendingOrderRequestsCount = useMemo(() => {
     return orders.filter((order) => order.status === "PENDING").length;
   }, [orders]);
 
+  // 2. Pending count for Route tab (e.g., active or pending route stops/orders)
+  const pendingRouteCount = useMemo(() => {
+    if (Array.isArray(activeOrders)) {
+      return activeOrders.filter((item: any) => item.status === "PENDING" || item.status === "ASSIGNED" || item.status === "IN_PROGRESS").length;
+    }
+    return 0;
+  }, [activeOrders]);
+
+  // 3. Pending count for Tasks tab
+  const pendingTasksCount = useMemo(() => {
+    if (Array.isArray(tasks)) {
+      return tasks.filter((task: any) => task.status === "INCOMPLETE").length;
+    }
+    return 0;
+  }, [tasks]);
+
   const pathname = usePathname();
   const isOrdersActive = pathname.includes('/orders') || pathname.includes('/sale');
+  const isRouteActive = pathname === '/' || pathname.includes('/index');
 
   return (
     <Tabs
@@ -44,17 +67,35 @@ export default function RiderLayout() {
         },
       }}
     >
+      {/* Route Tab with Red Badge Condition */}
       <Tabs.Screen
         name="index"
         options={{
           title: "Route",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
-              <Map size={20} color={color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const active = focused || isRouteActive;
+            return (
+              <View
+                style={[
+                  styles.iconContainer,
+                  active && styles.iconActiveBackground,
+                ]}
+              >
+                {/* Red Pending Route Badge */}
+                <Map size={20} color={color} />
+                {pendingRouteCount > 0 && (
+                  <View style={styles.badgeContainer}>
+                    <Text style={styles.badgeText}>
+                      {pendingRouteCount > 99 ? "99+" : pendingRouteCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            );
+          },
         }}
       />
+
       <Tabs.Screen
         name="wallet"
         options={{
@@ -66,11 +107,12 @@ export default function RiderLayout() {
           ),
         }}
       />
+
+      {/* Orders Tab */}
       <Tabs.Screen
         name="orders"
         options={{
           title: "Orders",
-          // Force active tint color if isOrdersActive is true
           tabBarActiveTintColor: isOrdersActive ? "#0284c7" : undefined,
           tabBarIcon: ({ color, focused }) => {
             const active = focused || isOrdersActive;
@@ -84,10 +126,10 @@ export default function RiderLayout() {
                 <Bike size={20} color={active ? "#0284c7" : color} />
 
                 {/* Red Pending Orders Badge */}
-                {pendingCount > 0 && (
+                {pendingOrderRequestsCount > 0 && (
                   <View style={styles.badgeContainer}>
                     <Text style={styles.badgeText}>
-                      {pendingCount > 99 ? "99+" : pendingCount}
+                      {pendingOrderRequestsCount > 99 ? "99+" : pendingOrderRequestsCount}
                     </Text>
                   </View>
                 )}
@@ -96,6 +138,8 @@ export default function RiderLayout() {
           },
         }}
       />
+
+      {/* Tasks Tab with Red Badge */}
       <Tabs.Screen
         name="tasks"
         options={{
@@ -103,10 +147,20 @@ export default function RiderLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && styles.iconActiveBackground]}>
               <ClipboardList size={20} color={color} />
+
+              {/* Red Pending Tasks Badge */}
+              {pendingTasksCount > 0 && (
+                <View style={styles.badgeContainer}>
+                  <Text style={styles.badgeText}>
+                    {pendingTasksCount > 99 ? "99+" : pendingTasksCount}
+                  </Text>
+                </View>
+              )}
             </View>
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{

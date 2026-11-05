@@ -1,10 +1,10 @@
 import { AxiosInstance } from 'axios';
 import { RiderActiveOrder } from '../types/orders';
 
+const API='/rider/orders'
 export const ordersApi = {
   getTodayActiveOrders: async (api: AxiosInstance): Promise<RiderActiveOrder[]> => {
-    const response = await api.get('/rider/mobile/orders/today');
-    console.log('HERE IS ORDERS',response.data)
+    const response = await api.get(`${API}/today`);
     return response.data;
   },
 
@@ -18,7 +18,6 @@ export const ordersApi = {
       paymentMethod: 'CASH' | 'ONLINE';
     }
   ): Promise<void> => {
-    console.log(settlementData)
-    await api.patch(`/rider/mobile/orders/${orderId}/status`, { status, settlementData });
+    await api.patch(`${API}/${orderId}/status`, { status, settlementData });
   },
 };

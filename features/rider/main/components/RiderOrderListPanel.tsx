@@ -34,17 +34,6 @@ export default function RiderOrderListPanel({
     setExpanded(!expanded);
   };
 
-  const handleCancelClick = (orderId: string) => {
-    Alert.alert(
-      "Cancel Ride",
-      "Are you sure you want to cancel this ongoing ride?",
-      [
-        { text: "No", style: "cancel" },
-        { text: "Yes, Cancel", style: "destructive", onPress: () => onUpdateStatus(orderId, 'CANCELLED') }
-      ]
-    );
-  };
-
   if (orders.length === 0) return null;
 
   return (
@@ -125,15 +114,6 @@ export default function RiderOrderListPanel({
 
                 {/* Actions Column */}
                 <View style={styles.actionCol}>
-                  {isThisOrderActive && (
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => handleCancelClick(item.id)}
-                    >
-                      <Text style={styles.cancelText}>Cancel Ride</Text>
-                    </TouchableOpacity>
-                  )}
-
                   <TouchableOpacity
                     disabled={isDisabled && !isSelected}
                     onPress={() => {

@@ -56,8 +56,8 @@ export default function RiderMapView({
                         centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
                         zoomLevel: 17.5,
                         pitch: 60,
-                        heading: mapHeading, // 🔥 Rotates the map so the blue line goes UP
-                        padding: { paddingBottom: 350 },// 🔥 Pushes the rider to the bottom of the screen!
+                        heading: mapHeading,
+                        padding: { paddingBottom: 350 },
                         animationDuration: 1000
                     });
                 } else {
@@ -89,15 +89,7 @@ export default function RiderMapView({
                         bearing: 0
                     }}
                 />
-
-                {riderLocation && (
-                    <Marker id="rider" lngLat={[riderLocation.longitude, riderLocation.latitude]}>
-                        <View style={styles.riderMarker}>
-                            <Bike size={16} color="#ffffff" />
-                        </View>
-                    </Marker>
-                )}
-
+                {/* Orders Map Markers with numbered index badges */}
                 {orders.map((order, index) => {
                     if (!order.customer.longitude || !order.customer.latitude) return null;
                     const isSelected = order.id === selectedOrderId;
@@ -120,6 +112,16 @@ export default function RiderMapView({
                         </Marker>
                     );
                 })}
+
+                {riderLocation && (
+                    <Marker id="rider" lngLat={[riderLocation.longitude, riderLocation.latitude]}>
+                        <View style={styles.riderMarker}>
+                            <Bike size={16} color="#ffffff" />
+                        </View>
+                    </Marker>
+                )}
+
+
 
                 {routeCoordinates.length > 0 && (
                     <GeoJSONSource
@@ -161,6 +163,9 @@ const styles = StyleSheet.create({
         flex: 1,
         position: 'relative',
     },
+    map: {
+        flex: 1,
+    },
     riderMarker: {
         height: 32,
         width: 32,
@@ -177,18 +182,20 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     orderMarkerContainer: {
-        alignItems: 'center',
+        alignItems:'flex-start',
+        justifyContent:'flex-start',
+        marginBottom: 40,
     },
     orderBadge: {
         paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: 4,
         borderRadius: 6,
         marginBottom: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 3,
-        elevation: 4,
+        elevation: 6,
     },
     orderBadgeSelected: {
         backgroundColor: '#0284c7', // bg-sky-600
@@ -203,9 +210,9 @@ const styles = StyleSheet.create({
     },
     recenterButton: {
         position: 'absolute',
-        bottom: 350, 
-        left: 20, 
-        backgroundColor: '#0f172a', 
+        bottom: 350,
+        left: 20,
+        backgroundColor: '#0f172a',
         padding: 12,
         borderRadius: 24,
         shadowColor: '#000',

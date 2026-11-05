@@ -3,7 +3,7 @@ import { Task, UpdateTaskPayload } from "../types/task";
 
 const API = '/tasks/user'
 export const tasksService = {
-    getAll: async (api: AxiosInstance, branchId: string): Promise<Task[]> => {
+    getAll: async (api: AxiosInstance): Promise<Task[]> => {
         const response = await api.get(`${API}`);
         return response.data;
     },

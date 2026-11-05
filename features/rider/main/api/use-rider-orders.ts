@@ -12,18 +12,18 @@ export function useTodayActiveOrders() {
         queryKey: orderKeysMain.todayActive(),
         queryFn: async () => ordersApi.getTodayActiveOrders(api),
         staleTime: 1000 * 30,
-        refetchInterval: 1000 * 20,
+        refetchInterval: 1000 * 60 * 1,
     });
 }
 
 interface UpdateStatusVariables {
-  orderId: string;
-  status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED';
-  settlementData?: {
-    deductedAdvance: number;
-    collectedAmount: number;
-    paymentMethod: 'CASH' | 'ONLINE';
-  };
+    orderId: string;
+    status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED';
+    settlementData?: {
+        deductedAdvance: number;
+        collectedAmount: number;
+        paymentMethod: 'CASH' | 'ONLINE';
+    };
 }
 
 export const useUpdateOrderStatus = () => {
