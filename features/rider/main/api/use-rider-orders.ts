@@ -22,7 +22,7 @@ interface UpdateStatusVariables {
     settlementData?: {
         deductedAdvance: number;
         collectedAmount: number;
-        paymentMethod: 'CASH' | 'ONLINE';
+        paymentMethod: 'CASH' | 'BANK';
     };
 }
 

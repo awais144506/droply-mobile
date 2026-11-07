@@ -1,7 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/refs */
+import React, { useRef, useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Image, Animated, Easing } from 'react-native';
 import { Map, Camera, Marker, GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
-import { Pin, LocateFixed, Bike } from 'lucide-react-native';
+import { Pin, LocateFixed, Bike, Navigation } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
 
 interface RiderMapViewProps {
@@ -11,9 +13,12 @@ interface RiderMapViewProps {
     routeCoordinates: [number, number][];
     onSelectOrder: (order: RiderActiveOrder) => void;
     onRecenter: () => void;
+    branchLat?: number;
+    branchLng?: number;
+    branchLogoUrl?: string;
 }
 
-const SAHIWAL_CENTER: [number, number] = [73.1114, 30.6682];
+const DEFAULT_CENTER: [number, number] = [73.1114, 30.6682];
 
 export default function RiderMapView({
     riderLocation,
@@ -22,11 +27,78 @@ export default function RiderMapView({
     routeCoordinates,
     onSelectOrder,
     onRecenter,
+    branchLat,
+    branchLng,
+    branchLogoUrl,
 }: RiderMapViewProps) {
     const cameraRef = useRef<any>(null);
+    const pulseAnim = useRef(new Animated.Value(0)).current;
 
-    // Boolean to check if we are in active navigation mode
+    const [fallbackRoute, setFallbackRoute] = useState<[number, number][]>([]);
+
     const isNavigating = !!selectedOrderId;
+    const hasBranchCoords = typeof branchLat === 'number' && typeof branchLng === 'number';
+    const fallbackCenter: [number, number] = hasBranchCoords
+        ? [branchLng as number, branchLat as number]
+        : DEFAULT_CENTER;
+
+    // Find active target order
+    const targetOrder = orders.find(
+        (o) => o.id === selectedOrderId || o.status === 'ON_ROUTE' || o.status === 'ARRIVED'
+    );
+
+    // 🔥 FETCH ROAD-SNAPPED ROUTE VIA OSRM IF PROPS ROUTECOORDINATES IS EMPTY ON RESTART
+    useEffect(() => {
+        if (routeCoordinates && routeCoordinates.length > 0) {
+            setFallbackRoute([]);
+            return;
+        }
+
+        if (
+            targetOrder &&
+            riderLocation &&
+            targetOrder.customer.longitude &&
+            targetOrder.customer.latitude
+        ) {
+            const fetchRoadRoute = async () => {
+                try {
+                    const startLng = riderLocation.longitude;
+                    const startLat = riderLocation.latitude;
+                    const endLng = targetOrder.customer.longitude;
+                    const endLat = targetOrder.customer.latitude;
+
+                    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+
+                    if (data.routes && data.routes.length > 0) {
+                        // MapLibre uses [lng, lat] format natively
+                        const coords = data.routes[0].geometry.coordinates as [number, number][];
+                        setFallbackRoute(coords);
+                    }
+                } catch (err) {
+                    console.log('Failed to fetch fallback road route:', err);
+                }
+            };
+
+            fetchRoadRoute();
+        }
+    }, [routeCoordinates, riderLocation, targetOrder]);
+
+    const activeRouteCoords = routeCoordinates.length > 0 ? routeCoordinates : fallbackRoute;
+
+    useEffect(() => {
+        const animation = Animated.loop(
+            Animated.timing(pulseAnim, {
+                toValue: 1,
+                duration: 1800,
+                easing: Easing.out(Easing.ease),
+                useNativeDriver: true,
+            })
+        );
+        animation.start();
+        return () => animation.stop();
+    }, [pulseAnim]);
 
     const calculateBearing = (startLat: number, startLng: number, destLat: number, destLng: number) => {
         const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -38,58 +110,116 @@ export default function RiderMapView({
     };
 
     useEffect(() => {
-        if (cameraRef.current && riderLocation) {
-            const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
+        if (!cameraRef.current) return;
+        const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
+        if (!camMethod) return;
 
-            if (camMethod) {
-                if (isNavigating) {
-                    // 1. Figure out which way to look
-                    let mapHeading = riderLocation.heading || 0;
-
-                    // If we have a route, force the camera to look down the route!
-                    if (routeCoordinates.length > 0) {
-                        const [nextLng, nextLat] = routeCoordinates[0];
-                        mapHeading = calculateBearing(riderLocation.latitude, riderLocation.longitude, nextLat, nextLng);
-                    }
-                    // Navigation Mode: Zoom tight, tilt 60deg, rotate to heading, push camera BEHIND rider
-                    camMethod.call(cameraRef.current, {
-                        centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
-                        zoomLevel: 17.5,
-                        pitch: 60,
-                        heading: mapHeading,
-                        padding: { paddingBottom: 350 },
-                        animationDuration: 1000
-                    });
-                } else {
-                    // Normal Mode: Zoom out, flat view, pointing North
-                    camMethod.call(cameraRef.current, {
-                        centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
-                        zoomLevel: 13,
-                        pitch: 0,
-                        heading: 0,
-                        padding: { paddingBottom: 0 }, // Reset padding
-                        animationDuration: 1000
-                    });
+        if (riderLocation) {
+            if (isNavigating) {
+                let mapHeading = riderLocation.heading || 0;
+                if (activeRouteCoords.length > 0) {
+                    const [nextLng, nextLat] = activeRouteCoords[0];
+                    mapHeading = calculateBearing(riderLocation.latitude, riderLocation.longitude, nextLat, nextLng);
                 }
+                camMethod.call(cameraRef.current, {
+                    centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
+                    zoomLevel: 17.5,
+                    pitch: 60,
+                    heading: mapHeading,
+                    padding: { paddingBottom: 350 },
+                    animationDuration: 1000,
+                });
+            } else {
+                camMethod.call(cameraRef.current, {
+                    centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
+                    zoomLevel: 13,
+                    pitch: 0,
+                    heading: 0,
+                    padding: { paddingBottom: 0 },
+                    animationDuration: 1000,
+                });
             }
+        } else if (hasBranchCoords) {
+            camMethod.call(cameraRef.current, {
+                centerCoordinate: [branchLng as number, branchLat as number],
+                zoomLevel: 13,
+                pitch: 0,
+                heading: 0,
+                padding: { paddingBottom: 0 },
+                animationDuration: 1000,
+            });
         }
-    }, [isNavigating, riderLocation]);
+    }, [isNavigating, riderLocation, hasBranchCoords, branchLat, branchLng, activeRouteCoords]);
+
+    const handleRecenterPress = () => {
+        onRecenter();
+        if (!cameraRef.current) return;
+        const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
+        if (!camMethod) return;
+
+        const targetCenter: [number, number] = riderLocation
+            ? [riderLocation.longitude, riderLocation.latitude]
+            : fallbackCenter;
+
+        camMethod.call(cameraRef.current, {
+            center: targetCenter,
+            zoom: isNavigating ? 17 : 13,
+            pitch: isNavigating ? 60 : 0,
+            bearing: isNavigating && riderLocation ? (riderLocation.heading || 0) : 0,
+            duration: 500,
+        });
+    };
+
+    const pulseScale = pulseAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 2.4],
+    });
+
+    const pulseOpacity = pulseAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.65, 0],
+    });
 
     return (
         <View style={styles.container}>
             <Map style={StyleSheet.absoluteFill} mapStyle="https://tiles.openfreemap.org/styles/liberty">
-
-                {/* Clean, strict TypeScript implementation */}
                 <Camera
                     ref={cameraRef}
                     initialViewState={{
-                        center: SAHIWAL_CENTER,
+                        center: fallbackCenter,
                         zoom: 13,
                         pitch: 0,
-                        bearing: 0
+                        bearing: 0,
                     }}
                 />
-                {/* Orders Map Markers with numbered index badges */}
+
+                {hasBranchCoords && (
+                    <Marker id="branch" lngLat={[branchLng as number, branchLat as number]}>
+                        <View style={styles.branchMarkerWrapper}>
+                            <Animated.View
+                                style={[
+                                    styles.branchPingRing,
+                                    {
+                                        transform: [{ scale: pulseScale }],
+                                        opacity: pulseOpacity,
+                                    },
+                                ]}
+                            />
+                            <View style={styles.branchMarker}>
+                                {branchLogoUrl ? (
+                                    <Image
+                                        source={{ uri: branchLogoUrl }}
+                                        style={styles.branchLogoImage}
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <Navigation size={18} color="#ffffff" />
+                                )}
+                            </View>
+                        </View>
+                    </Marker>
+                )}
+
                 {orders.map((order, index) => {
                     if (!order.customer.longitude || !order.customer.latitude) return null;
                     const isSelected = order.id === selectedOrderId;
@@ -101,13 +231,18 @@ export default function RiderMapView({
                             onPress={() => onSelectOrder(order)}
                         >
                             <View style={styles.orderMarkerContainer}>
-                                <View style={[
-                                    styles.orderBadge,
-                                    isSelected ? styles.orderBadgeSelected : styles.orderBadgeDefault
-                                ]}>
+                                <View
+                                    style={[
+                                        styles.orderBadge,
+                                        isSelected ? styles.orderBadgeSelected : styles.orderBadgeDefault,
+                                    ]}
+                                >
                                     <Text style={styles.orderBadgeText}>#{index + 1}</Text>
                                 </View>
-                                <Pin size={isSelected ? 30 : 22} color={isSelected ? "#0284c7" : "#1e293b"} />
+                                <Pin
+                                    size={isSelected ? 30 : 22}
+                                    color={isSelected ? "#0284c7" : "#1e293b"}
+                                />
                             </View>
                         </Marker>
                     );
@@ -121,14 +256,20 @@ export default function RiderMapView({
                     </Marker>
                 )}
 
-
-
-                {routeCoordinates.length > 0 && (
+                {activeRouteCoords.length > 0 && (
                     <GeoJSONSource
                         id="routeSource"
-                        data={{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: routeCoordinates } }}
+                        data={{
+                            type: "Feature",
+                            properties: {},
+                            geometry: { type: "LineString", coordinates: activeRouteCoords },
+                        }}
                     >
-                        <Layer id="routeLayer" type="line" style={{ lineColor: "#0284c7", lineWidth: 4, lineCap: "round" }} />
+                        <Layer
+                            id="routeLayer"
+                            type="line"
+                            style={{ lineColor: "#0284c7", lineWidth: 4, lineCap: "round" }}
+                        />
                     </GeoJSONSource>
                 )}
             </Map>
@@ -136,21 +277,7 @@ export default function RiderMapView({
             <TouchableOpacity
                 style={styles.recenterButton}
                 activeOpacity={0.8}
-                onPress={() => {
-                    onRecenter();
-                    if (cameraRef.current && riderLocation) {
-                        const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
-                        if (camMethod) {
-                            camMethod.call(cameraRef.current, {
-                                center: [riderLocation.longitude, riderLocation.latitude],
-                                zoom: isNavigating ? 17 : 13,
-                                pitch: isNavigating ? 60 : 0,
-                                bearing: isNavigating ? (riderLocation.heading || 0) : 0,
-                                duration: 500
-                            });
-                        }
-                    }
-                }}
+                onPress={handleRecenterPress}
             >
                 <LocateFixed size={22} color="#ffffff" />
             </TouchableOpacity>
@@ -165,6 +292,40 @@ const styles = StyleSheet.create({
     },
     map: {
         flex: 1,
+    },
+    branchMarkerWrapper: {
+        width: 64,
+        height: 64,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    branchPingRing: {
+        position: 'absolute',
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: '#10b981',
+    },
+    branchMarker: {
+        height: 40,
+        width: 40,
+        borderRadius: 20,
+        backgroundColor: '#059669',
+        borderWidth: 2.5,
+        borderColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 6,
+    },
+    branchLogoImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 20,
     },
     riderMarker: {
         height: 32,
@@ -182,8 +343,8 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     orderMarkerContainer: {
-        alignItems:'flex-start',
-        justifyContent:'flex-start',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
         marginBottom: 40,
     },
     orderBadge: {
@@ -198,10 +359,10 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     orderBadgeSelected: {
-        backgroundColor: '#0284c7', // bg-sky-600
+        backgroundColor: '#0284c7',
     },
     orderBadgeDefault: {
-        backgroundColor: '#1e293b', // bg-slate-800
+        backgroundColor: '#1e293b',
     },
     orderBadgeText: {
         fontSize: 10,
@@ -221,5 +382,5 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 8,
         zIndex: 20,
-    }
+    },
 });

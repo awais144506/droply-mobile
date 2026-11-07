@@ -21,7 +21,9 @@ export default function WalletScreen() {
   const [isExpenseModalOpen, setExpenseModalOpen] = useState(false);
 
   const dateString = format(selectedDate, 'yyyy-MM-dd');
-  const { data: logs = [], isLoading, isError, error, refetch, isRefetching } = useRiderLogs(branchId, dateString);
+  const { data: logsData, isLoading, isError, error, refetch, isRefetching } = useRiderLogs(branchId, dateString);
+  const logs = logsData?.logs
+  const ordersData = logsData?.shiftLogs
 
   const handleFilterChange = (filter: DateFilterType, date?: Date) => {
     setActiveFilter(filter);
@@ -72,6 +74,7 @@ export default function WalletScreen() {
 
         <WalletSummaryCard
           date={selectedDate}
+          shiftLogs={ordersData}
         />
 
         <View style={styles.actionButtonsRow}>

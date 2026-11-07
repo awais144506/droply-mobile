@@ -173,7 +173,6 @@ export default function RiderLayout() {
         }}
       />
 
-      <Tabs.Screen name="deliver/[stopId]" options={{ href: null }} />
       <Tabs.Screen name="sale/new-customer" options={{ href: null }} />
     </Tabs>
   );

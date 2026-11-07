@@ -28,4 +28,8 @@ export interface BranchDetails {
     phone: string,
     address: string,
     logoUrl: string,
+    branch: {
+        latitude: number;
+        longitude: number;
+    }
 }

@@ -15,7 +15,7 @@ export const ordersApi = {
     settlementData?: {
       deductedAdvance: number;
       collectedAmount: number;
-      paymentMethod: 'CASH' | 'ONLINE';
+      paymentMethod: 'CASH' | 'BANK';
     }
   ): Promise<void> => {
     await api.patch(`${API}/${orderId}/status`, { status, settlementData });

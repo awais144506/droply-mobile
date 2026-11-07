@@ -24,7 +24,15 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.dedroply.droplyapp"
+      "package": "com.dedroply.droplyapp",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -51,11 +59,14 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Droply to track your location to provide live delivery updates to the base.",
-          "locationAlwaysPermission": "Allow Droply to track deliveries even when the app is in the background.",
-          "locationWhenInUsePermission": "Allow Droply to use your location to track deliveries in real-time.",
+          "locationAlwaysAndWhenInUsePermission": "Allow Droply to track your location continuously during active delivery shifts.",
           "isAndroidBackgroundLocationEnabled": true,
-          "isAndroidForegroundServiceEnabled": true
+          "isAndroidForegroundServiceEnabled": true,
+          "androidForegroundService": {
+            "notificationTitle": "Droply Delivery Active",
+            "notificationBody": "Broadcasting your location securely in the background.",
+            "notificationColor": "#10b981"
+          }
         }
       ]
     ],

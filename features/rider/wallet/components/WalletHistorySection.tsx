@@ -2,19 +2,12 @@ import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { format, parseISO } from 'date-fns';
 import { CircleDashed } from 'lucide-react-native';
-import { LogType, getLogStyle, formatLogTitle } from '../utils/log-utils';
+import { getLogStyle, formatLogTitle } from '../utils/log-utils';
 import { historyStyles as styles } from '../style/log-style';
-
-export interface RiderLogs {
-  id: string;
-  type: LogType;
-  customerName?: string | null;
-  description: string;
-  createdAt: string;
-}
+import { RiderLogs } from '../types/logs';
 
 interface Props {
-  logs: RiderLogs[];
+  logs: RiderLogs[] | undefined;
   isLoading: boolean;
 }
 
@@ -56,14 +49,14 @@ export default function WalletHistorySection({ logs, isLoading }: Props) {
             <View
               key={log.id}
               style={[
-                styles.itemRow, 
+                styles.itemRow,
                 !isLast && styles.itemBorder
               ]}
             >
               {/* Icon Bubble (Dynamic colors loaded from util) */}
-              <View 
+              <View
                 style={[
-                  styles.iconBubble, 
+                  styles.iconBubble,
                   { backgroundColor: style.bg, borderColor: style.border }
                 ]}
               >

@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, LayoutAnimation, ScrollView, Dimensions, StyleSheet, Alert } from 'react-native';
-import { ChevronUp, ChevronDown } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, ActivityIndicator } from 'react-native';
+import { Navigation, Phone, MapPin, CheckCircle2, Play } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
 
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-interface OrderWithDistance extends RiderActiveOrder {
-  distanceFormatted?: string;
-}
-
-interface RiderOrderListPanelProps {
-  orders: OrderWithDistance[];
+interface Props {
+  orders: RiderActiveOrder[];
   selectedOrderId: string | null;
   hasActiveRide: boolean;
   onSelectOrder: (order: RiderActiveOrder) => void;
-  onUpdateStatus: (orderId: string, status: 'ON_ROUTE' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED') => void;
+  onUpdateStatus: (orderId: string, status: 'ON_ROUTE' | 'ARRIVED') => Promise<void> | void;
   onOpenDetails: (order: RiderActiveOrder) => void;
 }
 
@@ -25,298 +18,332 @@ export default function RiderOrderListPanel({
   hasActiveRide,
   onSelectOrder,
   onUpdateStatus,
-  onOpenDetails
-}: RiderOrderListPanelProps) {
-  const [expanded, setExpanded] = useState(true);
+  onOpenDetails,
+}: Props) {
+  // Track which specific order ID is currently updating status
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  const toggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(!expanded);
+  const handleCall = (phone: string) => {
+    Linking.openURL(`tel:${phone}`);
   };
 
-  if (orders.length === 0) return null;
+  const handleNavigate = (lat: number | null, lng: number | null) => {
+    if (!lat || !lng) return;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    Linking.openURL(url);
+  };
 
-  return (
-    <View style={styles.panelContainer}>
+  const handleStatusChange = async (orderId: string, status: 'ON_ROUTE' | 'ARRIVED') => {
+    try {
+      setUpdatingOrderId(orderId);
+      await onUpdateStatus(orderId, status);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  // Check if there is already an active ride in progress anywhere in the list
+  const activeRideExists = orders.some(
+    (o) => o.status === 'ON_ROUTE' || o.status === 'ARRIVED'
+  );
+
+  const renderItem = ({ item }: { item: RiderActiveOrder }) => {
+    const isSelected = item.id === selectedOrderId;
+    const isAssigned = item.status === 'ASSIGNED' || item.status === 'PENDING';
+    const isOnRoute = item.status === 'ON_ROUTE';
+    const isArrived = item.status === 'ARRIVED';
+    const isUpdating = updatingOrderId === item.id;
+
+    // If another order is already active, lock/disable this item if it's not the active one
+    const isThisOrderActive = isOnRoute || isArrived;
+    const shouldDisableAction = (activeRideExists && !isThisOrderActive) || isUpdating;
+
+    return (
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={toggleExpand}
-        style={styles.toggleButton}
+        onPress={() => onSelectOrder(item)}
+        style={[
+          styles.orderCard,
+          isSelected && styles.selectedCard,
+          activeRideExists && !isThisOrderActive && styles.disabledCardOpacity,
+        ]}
       >
-        <Text style={styles.toggleText}>
-          {expanded ? 'Collapse Stops' : 'Expand Stops'}
-        </Text>
-        {expanded ? <ChevronDown size={16} color="#ffffff" /> : <ChevronUp size={16} color="#ffffff" />}
+        <View style={styles.cardHeader}>
+          <View style={styles.codeRow}>
+            <Text style={styles.orderCode}>#{item.orderCode}</Text>
+            <View style={[styles.statusBadge, getStatusBadgeStyle(item.status)]}>
+              <Text style={styles.statusText}>{item.status}</Text>
+            </View>
+          </View>
+          {item.distanceFormatted && (
+            <Text style={styles.distanceText}>{item.distanceFormatted}</Text>
+          )}
+        </View>
+
+        <View style={styles.customerSection}>
+          <Text style={styles.customerName}>{item.customer.name}</Text>
+          <View style={styles.addressRow}>
+            <MapPin size={14} color="#64748b" />
+            <Text style={styles.addressText} numberOfLines={1}>
+              {item.customer.address || 'No address provided'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.financialRow}>
+          <Text style={styles.amountLabel}>Total: <Text style={styles.amountValue}>Rs. {item.totalAmount}</Text></Text>
+          <Text style={styles.paymentBadge}>{item.paymentMethod}</Text>
+        </View>
+
+        {/* Action Controls */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => handleCall(item.customer.phone)}
+            disabled={isUpdating}
+          >
+            <Phone size={18} color="#0284c7" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.iconButton, (!item.customer.latitude || !item.customer.longitude || isUpdating) && styles.disabledButton]}
+            onPress={() => handleNavigate(item.customer.latitude, item.customer.longitude)}
+            disabled={!item.customer.latitude || !item.customer.longitude || isUpdating}
+          >
+            <Navigation size={18} color="#10b981" />
+          </TouchableOpacity>
+
+          {isAssigned && (
+            <TouchableOpacity
+              style={[
+                styles.primaryActionButton,
+                shouldDisableAction && styles.disabledButton,
+              ]}
+              onPress={() => {
+                if (!shouldDisableAction) {
+                  handleStatusChange(item.id, 'ON_ROUTE');
+                }
+              }}
+              disabled={shouldDisableAction}
+            >
+              {isUpdating ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <>
+                  <Play size={14} color="#ffffff" fill="#ffffff" />
+                  <Text style={styles.primaryActionText}>Start Route</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {isOnRoute && (
+            <TouchableOpacity
+              style={[styles.primaryActionButton, isUpdating && styles.disabledButton]}
+              onPress={() => handleStatusChange(item.id, 'ARRIVED')}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.primaryActionText}>Mark Arrived</Text>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {isArrived && (
+            <TouchableOpacity
+              style={styles.settleActionButton}
+              onPress={() => onOpenDetails(item)}
+              disabled={isUpdating}
+            >
+              <CheckCircle2 size={16} color="#ffffff" />
+              <Text style={styles.settleActionText}>Settle Order</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </TouchableOpacity>
+    );
+  };
 
-      {expanded && (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {orders.map((item, index) => {
-            const isSelected = item.id === selectedOrderId;
-            
-            const isOnRoute = item.status === 'ON_ROUTE';
-            const isArrived = item.status === 'ARRIVED';
-            const isThisOrderActive = isOnRoute || isArrived;
-            
-            const isDisabled = hasActiveRide && !isThisOrderActive;
-            const cashDue = Math.max(item.totalAmount + (item.customer.customerCredit || 0) - (item.customer.customerAdvance || 0), 0);
-
-            // Determine card background and border dynamically
-            let cardStyle = styles.cardDefault;
-            if (isThisOrderActive) cardStyle = styles.cardActive;
-            else if (isSelected) cardStyle = styles.cardSelected;
-            else if (isDisabled) cardStyle = styles.cardDisabled;
-
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={isDisabled ? 1 : 0.9}
-                onPress={() => !isDisabled && onSelectOrder(item)}
-                style={[styles.cardBase, cardStyle]}
-              >
-                <View style={styles.infoCol}>
-                  
-                  {/* Name & Distance Row */}
-                  <View style={styles.headerRow}>
-                    <Text style={[styles.nameText, isDisabled && styles.textDisabled]} numberOfLines={1}>
-                      <Text style={isSelected || isThisOrderActive ? styles.textSky : styles.textMuted}>
-                        {index + 1}.{' '}
-                      </Text> 
-                      {item.customer.name}
-                    </Text>
-                    {item.distanceFormatted ? (
-                      <Text style={[styles.distanceText, isDisabled ? styles.textDisabled : styles.textSky]}>
-                        {item.distanceFormatted}
-                      </Text>
-                    ) : null}
-                  </View>
-
-                  {/* Address */}
-                  <Text style={styles.addressText} numberOfLines={1}>
-                    {item.customer.address || "No address provided"}
-                  </Text>
-
-                  {/* Phone & Cash Row */}
-                  <View style={styles.metaRow}>
-                    <Text style={[styles.phoneText, isDisabled && styles.textDisabled]}>
-                      {item.customer.phone}
-                    </Text>
-                    <Text style={styles.bulletPoint}>•</Text>
-                    <Text style={[styles.cashText, isDisabled && styles.textDisabled]}>
-                      Rs {cashDue}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Actions Column */}
-                <View style={styles.actionCol}>
-                  <TouchableOpacity
-                    disabled={isDisabled && !isSelected}
-                    onPress={() => {
-                      if (isArrived) onOpenDetails(item);
-                      else if (isOnRoute) onUpdateStatus(item.id, 'ARRIVED');
-                      else if (isSelected) onUpdateStatus(item.id, 'ON_ROUTE');
-                      else onSelectOrder(item);
-                    }}
-                    style={[
-                      styles.mainActionBtn,
-                      isArrived ? styles.btnIndigo :
-                      isOnRoute ? styles.btnEmerald :
-                      isSelected && !isDisabled ? styles.btnSky : styles.btnDefault
-                    ]}
-                  >
-                    <Text style={[
-                      styles.mainActionText, 
-                      isThisOrderActive || (isSelected && !isDisabled) ? styles.textWhite : styles.textMuted
-                    ]}>
-                      {isArrived ? 'Settle Order' : isOnRoute ? 'Reached' : isSelected ? 'Start Ride' : 'Pick Stop'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      )}
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={orders}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      />
     </View>
   );
 }
 
+function getStatusBadgeStyle(status: string) {
+  switch (status) {
+    case 'ASSIGNED':
+    case 'PENDING': return { backgroundColor: '#e0f2fe' };
+    case 'ON_ROUTE': return { backgroundColor: '#fef3c7' };
+    case 'ARRIVED': return { backgroundColor: '#d1fae5' };
+    default: return { backgroundColor: '#f1f5f9' };
+  }
+}
+
 const styles = StyleSheet.create({
-  // Container & Scroll
-  panelContainer: {
+  container: {
     position: 'absolute',
-    bottom: 8, 
-    left: 16,
-    right: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10, 
+    bottom: 24,
+    left: 0,
+    right: 0,
     zIndex: 20,
-    overflow: 'hidden',
   },
-  toggleButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    backgroundColor: '#0f172a', // slate-900
+  listContent: {
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  toggleText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 12,
-    letterSpacing: 1.2,
-    marginRight: 8,
-    textTransform: 'uppercase',
-  },
-  scrollView: {
-    flexShrink: 1,
-    maxHeight: SCREEN_HEIGHT * 0.35,
-    backgroundColor: '#f8fafc', // slate-50
-  },
-  scrollContent: {
+  orderCard: {
+    width: 310,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 16,
-    paddingBottom: 16,
-  },
-
-  // Card Structure
-  cardBase: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1.5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
-  cardActive: {
-    borderColor: '#0ea5e9', // sky-500
-    backgroundColor: '#f0f9ff', // sky-50
+  selectedCard: {
+    borderColor: '#0284c7',
+    borderWidth: 2,
   },
-  cardSelected: {
-    borderColor: '#7dd3fc', // sky-300
-    backgroundColor: '#ffffff',
+  disabledCardOpacity: {
+    opacity: 0.5,
   },
-  cardDisabled: {
-    borderColor: '#f1f5f9', // slate-100
-    backgroundColor: '#f1f5f9',
-    opacity: 0.6,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  cardDefault: {
-    borderColor: '#e2e8f0', // slate-200
-    backgroundColor: '#ffffff',
-  },
-
-  // Left Column (Info)
-  infoCol: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  headerRow: {
+  codeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: 8,
   },
-  nameText: {
-    fontWeight: 'bold',
+  orderCode: {
     fontSize: 16,
-    flex: 1,
-    color: '#0f172a', // slate-900
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#334155',
   },
   distanceText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    marginLeft: 8,
-  },
-  addressText: {
-    color: '#64748b', // slate-500
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  phoneText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    color: '#334155', // slate-700
-  },
-  bulletPoint: {
-    color: '#cbd5e1', // slate-300
-    marginHorizontal: 8,
-  },
-  cashText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    color: '#d97706', // amber-600
-  },
-
-  // Right Column (Actions)
-  actionCol: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    marginBottom: 8,
-  },
-  cancelText: {
-    color: '#ef4444', // red-500
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  mainActionBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnIndigo: {
-    backgroundColor: '#4f46e5', // indigo-600
-  },
-  btnEmerald: {
-    backgroundColor: '#10b981', // emerald-500
-  },
-  btnSky: {
-    backgroundColor: '#0284c7', // sky-600
-  },
-  btnDefault: {
-    backgroundColor: '#e2e8f0', // slate-200
-    borderWidth: 1,
-    borderColor: '#cbd5e1', // slate-300
-  },
-  mainActionText: {
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-
-  // Shared Utility Text Colors
-  textSky: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#0284c7',
   },
-  textMuted: {
+  customerSection: {
+    marginBottom: 10,
+  },
+  customerName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 2,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  addressText: {
+    fontSize: 13,
+    color: '#64748b',
+    flex: 1,
+  },
+  financialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 8,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  amountLabel: {
+    fontSize: 13,
     color: '#64748b',
   },
-  textWhite: {
-    color: '#ffffff',
+  amountValue: {
+    fontWeight: '700',
+    color: '#0f172a',
   },
-  textDisabled: {
-    color: '#94a3b8',
-  }
+  paymentBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284c7',
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    opacity: 0.4,
+  },
+  primaryActionButton: {
+    flex: 1,
+    backgroundColor: '#0284c7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 38,
+    borderRadius: 12,
+    gap: 6,
+  },
+  primaryActionText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  settleActionButton: {
+    flex: 1,
+    backgroundColor: '#10b981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 38,
+    borderRadius: 12,
+    gap: 6,
+  },
+  settleActionText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });

@@ -11,3 +11,15 @@ export interface RiderLogs {
     description: string;
     createdAt: string;
 }
+
+export interface ShiftLogs {
+    totalOrders: number;
+    completedOrders: number;
+    cancelledOrders: number;
+    amountPaid: number;
+}
+
+export interface ApiResponse {
+    logs: RiderLogs[];
+    shiftLogs: ShiftLogs
+}

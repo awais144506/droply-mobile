@@ -1,8 +1,8 @@
 import { AxiosInstance } from "axios";
-import { RiderLogs } from "../types/logs";
+import { RiderLogs ,ApiResponse} from "../types/logs";
 
 export const logsApi = {
-    getAllLogs: async (api: AxiosInstance, filterDate?: string): Promise<RiderLogs[]> => {
+    getAllLogs: async (api: AxiosInstance, filterDate?: string): Promise<ApiResponse> => {
         const response = await api.get(`/rider/logs`, {
             params: { filterDate }
         })
