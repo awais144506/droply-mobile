@@ -12,6 +12,8 @@ export interface OrderLineItem {
   paidQuantity: number; // Matches backend select
   unitPrice: number;
   product: OrderProduct;
+  productId: string;
+  freeQuantity: number;
 }
 
 export interface CustomerReturnable {

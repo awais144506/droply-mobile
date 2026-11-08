@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Switch, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+/* eslint-disable react-hooks/immutability */
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Switch, KeyboardAvoidingView, Platform, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, User, MapPin, Package, Banknote, CheckCircle2, CreditCard, Wallet, PhoneCall, MessageCircle, RefreshCw, Plus, Minus, AlertTriangle } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
+import { completeOrderStyle as styles } from '../style/settlemnt';
 
 interface AssetExchangePayload {
     productId: string;
-    inboundQuantity: number;  // Empties IN (Collected)
-    outboundQuantity: number; // Empties OUT (Given/Delivered)
+    inboundQuantity: number;  
+    outboundQuantity: number; 
     depositCharged: number;
 }
 
@@ -21,7 +23,15 @@ interface SettlementPayload {
 interface RiderOrderSettlementViewProps {
     order: RiderActiveOrder;
     onClose: () => void;
-    onComplete: (orderId: string, settlementData: SettlementPayload) => void;
+    onComplete: (orderId: string, settlementData: SettlementPayload) => Promise<void> | void;
+}
+
+interface UnifiedReturnableItem {
+    productId: string;
+    name: string;
+    securityDeposit: number;
+    currentBalance: number;
+    orderedQty: number;
 }
 
 export default function RiderOrderSettlementView({ order, onClose, onComplete }: RiderOrderSettlementViewProps) {
@@ -31,23 +41,30 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
     const deliveryCharges = order.deliveryCharges || 0;
     const discountAmount = order.discount || 0;
 
-    // State
+    const orderAssetExchanges = order.assetExchanges || [];
+
+    // Form States
     const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'BANK'>('CASH');
     const [useAdvance, setUseAdvance] = useState(false);
     const [advanceInput, setAdvanceInput] = useState(availableAdvance.toString());
     const [collectedInput, setCollectedInput] = useState('0');
+    
+    // NEW: Loading State
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Returnables state mapping: productId -> { inbound (empties collected), outbound (empties given) }
     const [assetExchanges, setAssetExchanges] = useState<{ [productId: string]: { inbound: string; outbound: string } }>(() => {
         const initial: { [productId: string]: { inbound: string; outbound: string } } = {};
-        order.customer.returnables?.forEach(ret => {
-            initial[ret.productId] = { inbound: '0', outbound: '0' };
+        orderAssetExchanges.forEach((ex) => {
+            initial[ex.productId] = {
+                inbound: (ex.inboundQuantity ?? 0).toString(),
+                outbound: (ex.outboundQuantity ?? 0).toString(),
+            };
         });
         return initial;
     });
 
     const updateAssetQty = (productId: string, field: 'inbound' | 'outbound', delta: number) => {
-        setAssetExchanges(prev => {
+        setAssetExchanges((prev) => {
             const current = prev[productId] || { inbound: '0', outbound: '0' };
             const currentVal = parseInt(current[field], 10) || 0;
             const newVal = Math.max(0, currentVal + delta);
@@ -62,7 +79,7 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
     };
 
     const handleAssetTextInput = (productId: string, field: 'inbound' | 'outbound', val: string) => {
-        setAssetExchanges(prev => {
+        setAssetExchanges((prev) => {
             const current = prev[productId] || { inbound: '0', outbound: '0' };
             return {
                 ...prev,
@@ -74,18 +91,17 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
         });
     };
 
-    // Validation: Check if any inbound (Collected IN) exceeds customer's current balance
     let hasReturnableError = false;
-    const formattedAssetExchanges: AssetExchangePayload[] = Object.entries(assetExchanges).map(([productId, data]) => {
+    const formattedAssetExchanges: AssetExchangePayload[] = orderAssetExchanges.map((ex) => {
+        const data = assetExchanges[ex.productId] || { inbound: '0', outbound: '0' };
         const inboundQty = parseInt(data.inbound, 10) || 0;
         const outboundQty = parseInt(data.outbound, 10) || 0;
 
-        const returnableMeta = order.customer.returnables?.find(r => r.productId === productId);
-        const unitDeposit = returnableMeta?.product?.securityDeposit || 0;
+        const unitDeposit = ex.product?.securityDeposit || 0;
+        const returnableMeta = order.customer.returnables?.find((r) => r.productId === ex.productId);
         const customerBalance = returnableMeta?.currentBalance || 0;
 
-        // If collected is greater than what customer holds, flag error
-        if (inboundQty > customerBalance) {
+        if (inboundQty > customerBalance + outboundQty) {
             hasReturnableError = true;
         }
 
@@ -93,27 +109,25 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
         const depositCharged = netOutbound * unitDeposit;
 
         return {
-            productId,
+            productId: ex.productId,
             inboundQuantity: inboundQty,
             outboundQuantity: outboundQty,
             depositCharged,
         };
     });
 
-    // Total security deposit charged across all returnables
     const totalSecurityDepositCharged = formattedAssetExchanges.reduce((sum, item) => sum + item.depositCharged, 0);
-
-    // Advance Calculation
-    const maxAllowedAdvance = Math.min(availableAdvance, order.totalAmount + previousCredit);
+    const grossPayable = order.totalAmount + previousCredit + totalSecurityDepositCharged;
+    
+    const maxAllowedAdvance = Math.min(availableAdvance, grossPayable);
     const parsedAdvanceInput = parseFloat(advanceInput) || 0;
     const actualAdvanceToDeduct = useAdvance ? Math.min(parsedAdvanceInput, maxAllowedAdvance) : 0;
 
-    // Final Cash Due
-    const cashDue = Math.max(order.totalAmount + previousCredit - actualAdvanceToDeduct, 0);
+    const cashDue = Math.max(grossPayable - actualAdvanceToDeduct, 0);
 
-    // Form Validation Checks
     const parsedCollectedAmount = parseFloat(collectedInput);
-    const isCollectedValid = !isNaN(parsedCollectedAmount) && parsedCollectedAmount >= 0;
+    // 🔥 NEW: Ensure collected amount does not exceed cashDue
+    const isCollectedValid = !isNaN(parsedCollectedAmount) && parsedCollectedAmount >= 0 && parsedCollectedAmount <= cashDue;
     const isAdvanceValid = !useAdvance || (parsedAdvanceInput >= 0 && parsedAdvanceInput <= maxAllowedAdvance);
     const isFormValid = isCollectedValid && isAdvanceValid && !hasReturnableError;
 
@@ -128,31 +142,32 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
 
         Linking.canOpenURL(url)
             .then((supported) => {
-                if (!supported) {
-                    return Linking.openURL(`https://wa.me/${formattedPhone}?text=${message}`);
-                } else {
-                    return Linking.openURL(url);
-                }
+                if (!supported) return Linking.openURL(`https://wa.me/${formattedPhone}?text=${message}`);
+                return Linking.openURL(url);
             })
             .catch((err) => console.error('Error opening WhatsApp:', err));
     };
 
-    const handleComplete = () => {
-        if (!isFormValid) return;
-
-        onComplete(order.id, {
-            deductedAdvance: actualAdvanceToDeduct,
-            collectedAmount: parsedCollectedAmount,
-            paymentMethod,
-            assetExchanges: formattedAssetExchanges,
-        });
+    const handleComplete = async () => {
+        if (!isFormValid || isSubmitting) return;
+        
+        setIsSubmitting(true);
+        try {
+            await onComplete(order.id, {
+                deductedAdvance: actualAdvanceToDeduct,
+                collectedAmount: parsedCollectedAmount,
+                paymentMethod,
+                assetExchanges: formattedAssetExchanges,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
 
-                {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Settle Order</Text>
                     <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -176,20 +191,11 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
 
                         <View style={styles.contactActionsRow}>
                             <View style={styles.actionButtonsGroup}>
-                                <TouchableOpacity
-                                    onPress={() => handleCall(order.customer.phone)}
-                                    style={styles.callButton}
-                                    activeOpacity={0.7}
-                                >
+                                <TouchableOpacity onPress={() => handleCall(order.customer.phone)} style={styles.callButton} activeOpacity={0.7}>
                                     <PhoneCall size={14} color="#0284c7" strokeWidth={2.5} />
                                     <Text style={styles.callButtonText}>Call</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    onPress={() => handleWhatsApp(order.customer.phone, order.customer.name)}
-                                    style={styles.whatsappButton}
-                                    activeOpacity={0.7}
-                                >
+                                <TouchableOpacity onPress={() => handleWhatsApp(order.customer.phone, order.customer.name)} style={styles.whatsappButton} activeOpacity={0.7}>
                                     <MessageCircle size={14} color="#16a34a" strokeWidth={2.5} />
                                     <Text style={styles.whatsappButtonText}>WhatsApp</Text>
                                 </TouchableOpacity>
@@ -239,8 +245,8 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                         </View>
                     </View>
 
-                    {/* 3. Container Returns (Empties In [+ Green] & Out [- Red]) */}
-                    {order.customer.returnables && order.customer.returnables.length > 0 && (
+                    {/* 3. Container Returns */}
+                    {orderAssetExchanges.length > 0 && (
                         <View style={styles.card}>
                             <View style={styles.itemsHeader}>
                                 <RefreshCw size={18} color="#0284c7" style={styles.iconMarginSmall} />
@@ -248,18 +254,23 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                             </View>
                             <Text style={styles.returnSubText}>Log bottles collected (In) and given out (Out):</Text>
 
-                            {order.customer.returnables.map((ret) => {
-                                const currentData = assetExchanges[ret.productId] || { inbound: '0', outbound: '0' };
-                                const unitDeposit = ret.product.securityDeposit || 0;
+                            {orderAssetExchanges.map((ex) => {
+                                const currentData = assetExchanges[ex.productId] || { inbound: '0', outbound: '0' };
+                                const unitDeposit = ex.product?.securityDeposit || 0;
                                 const inboundNum = parseInt(currentData.inbound, 10) || 0;
-                                const isItemError = inboundNum > ret.currentBalance;
+                                const outboundNum = parseInt(currentData.outbound, 10) || 0;
+
+                                const returnableMeta = order.customer.returnables?.find((r) => r.productId === ex.productId);
+                                const customerBalance = returnableMeta?.currentBalance || 0;
+                                const maxCollectible = customerBalance + outboundNum;
+                                const isItemError = inboundNum > maxCollectible;
 
                                 return (
-                                    <View key={ret.productId} style={[styles.assetCardItem, isItemError && styles.assetCardItemError]}>
+                                    <View key={ex.productId} style={[styles.assetCardItem, isItemError && styles.assetCardItemError]}>
                                         <View style={styles.assetTopRow}>
                                             <View>
-                                                <Text style={styles.returnableName}>{ret.product.name}</Text>
-                                                <Text style={styles.returnableBalance}>Balance at Customer: {ret.currentBalance}</Text>
+                                                <Text style={styles.returnableName}>{ex.product?.name}</Text>
+                                                <Text style={styles.returnableBalance}>Held by Customer: {customerBalance}</Text>
                                             </View>
                                             {unitDeposit > 0 && (
                                                 <View style={styles.depositBadge}>
@@ -268,59 +279,36 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                                             )}
                                         </View>
 
-                                        {/* Empties IN Stepper (Green Theme) */}
+                                        {/* Empties IN Stepper */}
                                         <View style={[styles.stepperControlRow, styles.greenStepperRow]}>
                                             <Text style={[styles.stepperLabel, styles.greenLabel]}>Empties Collected (IN):</Text>
                                             <View style={styles.stepperGroup}>
-                                                <TouchableOpacity
-                                                    style={[styles.stepButton, styles.greenStepButton]}
-                                                    onPress={() => updateAssetQty(ret.productId, 'inbound', -1)}
-                                                >
+                                                <TouchableOpacity style={[styles.stepButton, styles.greenStepButton]} onPress={() => updateAssetQty(ex.productId, 'inbound', -1)}>
                                                     <Minus size={14} color="#065f46" />
                                                 </TouchableOpacity>
-                                                <TextInput
-                                                    style={styles.returnInput}
-                                                    keyboardType="numeric"
-                                                    value={currentData.inbound}
-                                                    onChangeText={(val) => handleAssetTextInput(ret.productId, 'inbound', val)}
-                                                />
-                                                <TouchableOpacity
-                                                    style={[styles.stepButton, styles.greenStepButton]}
-                                                    onPress={() => updateAssetQty(ret.productId, 'inbound', 1)}
-                                                >
+                                                <TextInput style={styles.returnInput} keyboardType="numeric" value={currentData.inbound} onChangeText={(val) => handleAssetTextInput(ex.productId, 'inbound', val)} />
+                                                <TouchableOpacity style={[styles.stepButton, styles.greenStepButton]} onPress={() => updateAssetQty(ex.productId, 'inbound', 1)}>
                                                     <Plus size={14} color="#065f46" />
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
 
-                                        {/* Error Notice if Collected IN exceeds Balance */}
                                         {isItemError && (
                                             <View style={styles.errorBanner}>
                                                 <AlertTriangle size={14} color="#dc2626" />
-                                                <Text style={styles.errorText}>Cannot collect more than customer balance ({ret.currentBalance})!</Text>
+                                                <Text style={styles.errorText}>Cannot collect more than {maxCollectible} bottles!</Text>
                                             </View>
                                         )}
 
-                                        {/* Empties OUT Stepper (Red Theme) */}
+                                        {/* Empties OUT Stepper */}
                                         <View style={[styles.stepperControlRow, styles.redStepperRow]}>
                                             <Text style={[styles.stepperLabel, styles.redLabel]}>Empties Given (OUT):</Text>
                                             <View style={styles.stepperGroup}>
-                                                <TouchableOpacity
-                                                    style={[styles.stepButton, styles.redStepButton]}
-                                                    onPress={() => updateAssetQty(ret.productId, 'outbound', -1)}
-                                                >
+                                                <TouchableOpacity style={[styles.stepButton, styles.redStepButton]} onPress={() => updateAssetQty(ex.productId, 'outbound', -1)}>
                                                     <Minus size={14} color="#991b1b" />
                                                 </TouchableOpacity>
-                                                <TextInput
-                                                    style={styles.returnInput}
-                                                    keyboardType="numeric"
-                                                    value={currentData.outbound}
-                                                    onChangeText={(val) => handleAssetTextInput(ret.productId, 'outbound', val)}
-                                                />
-                                                <TouchableOpacity
-                                                    style={[styles.stepButton, styles.redStepButton]}
-                                                    onPress={() => updateAssetQty(ret.productId, 'outbound', 1)}
-                                                >
+                                                <TextInput style={styles.returnInput} keyboardType="numeric" value={currentData.outbound} onChangeText={(val) => handleAssetTextInput(ex.productId, 'outbound', val)} />
+                                                <TouchableOpacity style={[styles.stepButton, styles.redStepButton]} onPress={() => updateAssetQty(ex.productId, 'outbound', 1)}>
                                                     <Plus size={14} color="#991b1b" />
                                                 </TouchableOpacity>
                                             </View>
@@ -359,11 +347,8 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                                             value={advanceInput}
                                             onChangeText={(val) => {
                                                 const num = parseFloat(val) || 0;
-                                                if (num <= maxAllowedAdvance) {
-                                                    setAdvanceInput(val);
-                                                } else {
-                                                    setAdvanceInput(maxAllowedAdvance.toString());
-                                                }
+                                                if (num <= maxAllowedAdvance) setAdvanceInput(val);
+                                                else setAdvanceInput(maxAllowedAdvance.toString());
                                             }}
                                             placeholder="e.g. 500"
                                         />
@@ -376,17 +361,11 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                         {/* Payment Method Tabs */}
                         <Text style={styles.inputLabel}>Payment Method</Text>
                         <View style={styles.tabContainer}>
-                            <TouchableOpacity
-                                style={[styles.tabButton, paymentMethod === 'CASH' && styles.tabActive]}
-                                onPress={() => setPaymentMethod('CASH')}
-                            >
+                            <TouchableOpacity style={[styles.tabButton, paymentMethod === 'CASH' && styles.tabActive]} onPress={() => setPaymentMethod('CASH')}>
                                 <Banknote size={16} color={paymentMethod === 'CASH' ? '#ffffff' : '#64748b'} />
                                 <Text style={[styles.tabText, paymentMethod === 'CASH' && styles.tabTextActive]}>Cash</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.tabButton, paymentMethod === 'BANK' && styles.tabActive]}
-                                onPress={() => setPaymentMethod('BANK')}
-                            >
+                            <TouchableOpacity style={[styles.tabButton, paymentMethod === 'BANK' && styles.tabActive]} onPress={() => setPaymentMethod('BANK')}>
                                 <CreditCard size={16} color={paymentMethod === 'BANK' ? '#ffffff' : '#64748b'} />
                                 <Text style={[styles.tabText, paymentMethod === 'BANK' && styles.tabTextActive]}>Online</Text>
                             </TouchableOpacity>
@@ -408,10 +387,16 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                                     placeholderTextColor="#94a3b8"
                                 />
                             </View>
+                            {/* 🔥 Show warning if they type an amount greater than cashDue */}
+                            {parsedCollectedAmount > cashDue && (
+                                <Text style={{ color: '#dc2626', fontSize: 11, marginTop: 6, fontWeight: '600' }}>
+                                    Cannot collect more than the final due amount (Rs {cashDue}).
+                                </Text>
+                            )}
                         </View>
                     </View>
 
-                    {/* 5. Final Cash Summary Card (Shows total security deposit at the end) */}
+                    {/* 5. Final Cash Summary Card */}
                     <View style={styles.cashCard}>
                         {order.totalAmount > 0 && (
                             <View style={styles.summaryRow}>
@@ -454,363 +439,25 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                     <View style={{ height: 40 }} />
                 </ScrollView>
 
-                {/* Footer Action Button (Disabled if form has errors or returnable error) */}
+                {/* Footer Action Button (Disabled if submitting or invalid) */}
                 <View style={styles.footer}>
                     <TouchableOpacity
                         activeOpacity={0.9}
                         onPress={handleComplete}
-                        disabled={!isFormValid}
-                        style={[styles.completeButton, !isFormValid && styles.disabledButton]}
+                        disabled={!isFormValid || isSubmitting}
+                        style={[styles.completeButton, (!isFormValid || isSubmitting) && styles.disabledButton]}
                     >
-                        <CheckCircle2 size={24} color="#ffffff" style={styles.iconMarginSmall} />
-                        <Text style={styles.completeText}>Settle & Complete</Text>
+                        {isSubmitting ? (
+                            <ActivityIndicator size="small" color="#ffffff" style={styles.iconMarginSmall} />
+                        ) : (
+                            <CheckCircle2 size={24} color="#ffffff" style={styles.iconMarginSmall} />
+                        )}
+                        <Text style={styles.completeText}>
+                            {isSubmitting ? 'Processing...' : 'Settle & Complete'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        position: 'absolute',
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: '#f8fafc',
-        zIndex: 50,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        backgroundColor: '#ffffff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e2e8f0',
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: '#0f172a',
-    },
-    closeButton: {
-        padding: 8,
-        backgroundColor: '#f1f5f9',
-        borderRadius: 20,
-    },
-    scrollView: {
-        flex: 1,
-        padding: 16,
-    },
-    card: {
-        backgroundColor: '#ffffff',
-        padding: 20,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#0f172a',
-        marginBottom: 16,
-    },
-    customerHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    avatarIcon: {
-        width: 40, height: 40,
-        backgroundColor: '#e0f2fe',
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    customerNameCol: { flex: 1 },
-    customerLabel: {
-        fontSize: 11, fontWeight: '700',
-        color: '#0284c7', textTransform: 'uppercase',
-        letterSpacing: 0.5, marginBottom: 4,
-    },
-    customerName: {
-        fontSize: 18, fontWeight: 'bold', color: '#0f172a',
-    },
-    contactActionsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
-        marginBottom: 12,
-    },
-    actionButtonsGroup: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    callButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: '#f0f9ff',
-        borderWidth: 1,
-        borderColor: '#bae6fd',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
-    },
-    callButtonText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#0284c7',
-    },
-    whatsappButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: '#f0fdf4',
-        borderWidth: 1,
-        borderColor: '#bbf7d0',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
-    },
-    whatsappButtonText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#16a34a',
-    },
-    addressRow: { flexDirection: 'row', alignItems: 'flex-start' },
-    addressIcon: { marginTop: 4, marginRight: 12 },
-    addressText: { color: '#475569', flex: 1, lineHeight: 20 },
-    itemsHeader: {
-        flexDirection: 'row', alignItems: 'center',
-        borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
-        paddingBottom: 12, marginBottom: 16,
-    },
-    itemsTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
-    itemRow: {
-        flexDirection: 'row', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: 12,
-    },
-    itemLeft: { flexDirection: 'row', alignItems: 'center' },
-    qtyBadge: {
-        backgroundColor: '#f1f5f9', paddingHorizontal: 10,
-        paddingVertical: 4, borderRadius: 6, marginRight: 10,
-    },
-    qtyText: { fontWeight: 'bold', color: '#1e293b', fontSize: 12 },
-    itemName: { color: '#334155', fontWeight: '500' },
-    itemPrice: { color: '#64748b', fontWeight: '500' },
-    subText: { color: '#64748b', fontSize: 13 },
-    discountText: { color: '#e11d48', fontSize: 13, fontWeight: '500' },
-    iconMarginSmall: { marginRight: 8 },
-    lightDivider: {
-        height: 1, backgroundColor: '#f1f5f9',
-        marginVertical: 12,
-    },
-    returnSubText: { fontSize: 12, color: '#64748b', marginBottom: 12 },
-    assetCardItem: {
-        backgroundColor: '#f8fafc',
-        padding: 12,
-        borderRadius: 14,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        gap: 8,
-    },
-    assetCardItemError: {
-        borderColor: '#ef4444',
-        backgroundColor: '#fef2f2',
-    },
-    assetTopRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 4,
-    },
-    returnableName: { fontWeight: '700', color: '#0f172a', fontSize: 14 },
-    returnableBalance: { fontSize: 11, color: '#64748b', marginTop: 2 },
-    depositBadge: {
-        backgroundColor: '#fef3c7',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-    },
-    depositBadgeText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#d97706',
-    },
-    stepperControlRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 10,
-    },
-    greenStepperRow: {
-        backgroundColor: '#ecfdf5',
-        borderWidth: 1,
-        borderColor: '#a7f3d0',
-    },
-    redStepperRow: {
-        backgroundColor: '#fef2f2',
-        borderWidth: 1,
-        borderColor: '#fecaca',
-    },
-    stepperLabel: {
-        fontSize: 12,
-        fontWeight: '700',
-    },
-    greenLabel: {
-        color: '#065f46',
-    },
-    redLabel: {
-        color: '#991b1b',
-    },
-    stepperGroup: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    stepButton: {
-        width: 30,
-        height: 30,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    greenStepButton: {
-        backgroundColor: '#d1fae5',
-    },
-    redStepButton: {
-        backgroundColor: '#fee2e2',
-    },
-    returnInput: {
-        backgroundColor: '#ffffff',
-        borderWidth: 1,
-        borderColor: '#cbd5e1',
-        borderRadius: 8,
-        width: 44,
-        textAlign: 'center',
-        paddingVertical: 4,
-        fontWeight: '700',
-        fontSize: 14,
-        color: '#0f172a',
-    },
-    errorBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#fee2e2',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
-    },
-    errorText: {
-        color: '#dc2626',
-        fontSize: 11,
-        fontWeight: '700',
-        flex: 1,
-    },
-    advanceContainer: {
-        backgroundColor: '#f8fafc',
-        padding: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        marginBottom: 16,
-    },
-    advanceToggleRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    advanceTitle: { fontWeight: '700', color: '#0f172a' },
-    advanceSub: { fontSize: 12, color: '#059669', marginTop: 2, fontWeight: '600' },
-    inputGroup: { marginTop: 12 },
-    inputLabel: {
-        fontSize: 13, fontWeight: '700',
-        color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5
-    },
-    textInput: {
-        backgroundColor: '#ffffff',
-        borderWidth: 1, borderColor: '#cbd5e1',
-        borderRadius: 10, padding: 12,
-        fontSize: 16, color: '#0f172a', fontWeight: '600'
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        backgroundColor: '#f1f5f9',
-        borderRadius: 12,
-        padding: 4,
-        marginBottom: 20,
-    },
-    tabButton: {
-        flex: 1, flexDirection: 'row',
-        alignItems: 'center', justifyContent: 'center',
-        paddingVertical: 10, borderRadius: 8, gap: 6,
-    },
-    tabActive: { backgroundColor: '#0f172a', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-    tabText: { fontWeight: '600', color: '#64748b' },
-    tabTextActive: { color: '#ffffff' },
-    amountInputContainer: {
-        flexDirection: 'row', alignItems: 'center',
-        borderWidth: 1, borderColor: '#cbd5e1',
-        borderRadius: 12, backgroundColor: '#ffffff',
-        overflow: 'hidden',
-    },
-    currencyBadge: {
-        backgroundColor: '#f1f5f9',
-        paddingHorizontal: 16, paddingVertical: 16,
-        borderRightWidth: 1, borderRightColor: '#cbd5e1',
-    },
-    currencyText: { fontWeight: '700', color: '#475569' },
-    amountInput: {
-        flex: 1, paddingHorizontal: 16,
-        fontSize: 18, fontWeight: '700', color: '#0f172a',
-    },
-    cashCard: {
-        backgroundColor: '#ecfdf5', padding: 20,
-        borderRadius: 24, borderWidth: 1,
-        borderColor: '#d1fae5', marginBottom: 16,
-    },
-    summaryRow: {
-        flexDirection: 'row', alignItems: 'center',
-        justifyContent: 'space-between', marginBottom: 8,
-    },
-    summaryLabel: { color: '#065f46', fontWeight: 'bold' },
-    amountTotal: { color: '#581fe0', fontWeight: '400' },
-    creditLabel: { color: '#e11d48', fontWeight: '500' },
-    depositLabel: { color: '#d97706', fontWeight: '600' },
-    advanceLabel: { color: '#059669', fontWeight: '500' },
-    divider: { height: 1, backgroundColor: '#a7f3d0', marginVertical: 12 },
-    totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    totalLeft: { flexDirection: 'row', alignItems: 'center' },
-    totalLabel: { fontSize: 18, fontWeight: 'bold', color: '#064e3b' },
-    totalAmount: { fontSize: 24, fontWeight: '900', color: '#047857' },
-    footer: {
-        padding: 16, backgroundColor: '#ffffff',
-        borderTopWidth: 1, borderTopColor: '#f1f5f9',
-    },
-    completeButton: {
-        backgroundColor: '#10b981', flexDirection: 'row',
-        alignItems: 'center', justifyContent: 'center',
-        paddingVertical: 16, borderRadius: 16,
-    },
-    disabledButton: {
-        backgroundColor: '#cbd5e1',
-        opacity: 0.7,
-    },
-    completeText: { color: '#ffffff', fontWeight: 'bold', fontSize: 18, letterSpacing: 0.5 }
-});

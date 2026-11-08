@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Linking, ActivityIndicator } from 'react-native';
 import { Navigation, Phone, MapPin, CheckCircle2, Play } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
+import { orderListStyle as styles } from '../style/settlemnt';
 
 interface Props {
   orders: RiderActiveOrder[];
@@ -75,9 +76,6 @@ export default function RiderOrderListPanel({
               <Text style={styles.statusText}>{item.status}</Text>
             </View>
           </View>
-          {item.distanceFormatted && (
-            <Text style={styles.distanceText}>{item.distanceFormatted}</Text>
-          )}
         </View>
 
         <View style={styles.customerSection}>
@@ -87,6 +85,9 @@ export default function RiderOrderListPanel({
             <Text style={styles.addressText} numberOfLines={1}>
               {item.customer.address || 'No address provided'}
             </Text>
+            {item.distanceFormatted && (
+              <Text style={styles.distanceText}>{item.distanceFormatted}</Text>
+            )}
           </View>
         </View>
 
@@ -190,160 +191,3 @@ function getStatusBadgeStyle(status: string) {
     default: return { backgroundColor: '#f1f5f9' };
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 24,
-    left: 0,
-    right: 0,
-    zIndex: 20,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  orderCard: {
-    width: 310,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  selectedCard: {
-    borderColor: '#0284c7',
-    borderWidth: 2,
-  },
-  disabledCardOpacity: {
-    opacity: 0.5,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  orderCode: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#334155',
-  },
-  distanceText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#0284c7',
-  },
-  customerSection: {
-    marginBottom: 10,
-  },
-  customerName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 2,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  addressText: {
-    fontSize: 13,
-    color: '#64748b',
-    flex: 1,
-  },
-  financialRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    padding: 8,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  amountLabel: {
-    fontSize: 13,
-    color: '#64748b',
-  },
-  amountValue: {
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  paymentBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0284c7',
-    backgroundColor: '#e0f2fe',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#f1f5f9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabledButton: {
-    opacity: 0.4,
-  },
-  primaryActionButton: {
-    flex: 1,
-    backgroundColor: '#0284c7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 38,
-    borderRadius: 12,
-    gap: 6,
-  },
-  primaryActionText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  settleActionButton: {
-    flex: 1,
-    backgroundColor: '#10b981',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 38,
-    borderRadius: 12,
-    gap: 6,
-  },
-  settleActionText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-});
