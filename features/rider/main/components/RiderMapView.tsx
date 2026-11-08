@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Image, Animated, Easing } from 'react-native';
 import { Map, Camera, Marker, GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
-import { Pin, LocateFixed, Bike, Navigation } from 'lucide-react-native';
+import { Package, LocateFixed, Navigation2, Navigation } from 'lucide-react-native';
 import { RiderActiveOrder } from '../types/orders';
 
 interface RiderMapViewProps {
@@ -18,7 +18,7 @@ interface RiderMapViewProps {
     branchLogoUrl?: string;
 }
 
-const DEFAULT_CENTER: [number, number] = [73.1114, 30.6682];
+const DEFAULT_CENTER: [number, number] = [74.1114, 31.6682];
 
 export default function RiderMapView({
     riderLocation,
@@ -109,36 +109,26 @@ export default function RiderMapView({
         return (toDeg(Math.atan2(y, x)) + 360) % 360;
     };
 
+    // 🔥 STRAIGHT, FLAT MAP CAMERA CONTROLLER (No Tilt/Pitch)
     useEffect(() => {
         if (!cameraRef.current) return;
         const camMethod = cameraRef.current.flyTo || cameraRef.current.setCamera;
         if (!camMethod) return;
 
         if (riderLocation) {
-            if (isNavigating) {
-                let mapHeading = riderLocation.heading || 0;
-                if (activeRouteCoords.length > 0) {
-                    const [nextLng, nextLat] = activeRouteCoords[0];
-                    mapHeading = calculateBearing(riderLocation.latitude, riderLocation.longitude, nextLat, nextLng);
-                }
-                camMethod.call(cameraRef.current, {
-                    centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
-                    zoomLevel: 17.5,
-                    pitch: 60,
-                    heading: mapHeading,
-                    padding: { paddingBottom: 350 },
-                    animationDuration: 1000,
-                });
-            } else {
-                camMethod.call(cameraRef.current, {
-                    centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
-                    zoomLevel: 13,
-                    pitch: 0,
-                    heading: 0,
-                    padding: { paddingBottom: 0 },
-                    animationDuration: 1000,
-                });
+            let mapHeading = riderLocation.heading || 0;
+            if (isNavigating && activeRouteCoords.length > 0) {
+                const [nextLng, nextLat] = activeRouteCoords[0];
+                mapHeading = calculateBearing(riderLocation.latitude, riderLocation.longitude, nextLat, nextLng);
             }
+            camMethod.call(cameraRef.current, {
+                centerCoordinate: [riderLocation.longitude, riderLocation.latitude],
+                zoomLevel: isNavigating ? 17.5 : 14,
+                pitch: 0, // Locked straight/flat
+                heading: 0, // Keep north up or use mapHeading if preferred
+                padding: { paddingBottom: isNavigating ? 350 : 0 },
+                animationDuration: 1000,
+            });
         } else if (hasBranchCoords) {
             camMethod.call(cameraRef.current, {
                 centerCoordinate: [branchLng as number, branchLat as number],
@@ -163,9 +153,9 @@ export default function RiderMapView({
 
         camMethod.call(cameraRef.current, {
             center: targetCenter,
-            zoom: isNavigating ? 17 : 13,
-            pitch: isNavigating ? 60 : 0,
-            bearing: isNavigating && riderLocation ? (riderLocation.heading || 0) : 0,
+            zoom: isNavigating ? 17 : 14,
+            pitch: 0, // Stay flat on recenter
+            bearing: 0,
             duration: 500,
         });
     };
@@ -180,6 +170,9 @@ export default function RiderMapView({
         outputRange: [0.65, 0],
     });
 
+    // Calculate heading rotation for the arrow icon
+    const riderHeading = riderLocation?.heading || 0;
+
     return (
         <View style={styles.container}>
             <Map style={StyleSheet.absoluteFill} mapStyle="https://tiles.openfreemap.org/styles/liberty">
@@ -187,7 +180,7 @@ export default function RiderMapView({
                     ref={cameraRef}
                     initialViewState={{
                         center: fallbackCenter,
-                        zoom: 13,
+                        zoom: 14,
                         pitch: 0,
                         bearing: 0,
                     }}
@@ -220,7 +213,7 @@ export default function RiderMapView({
                     </Marker>
                 )}
 
-                {orders.map((order, index) => {
+               {orders.map((order, index) => {
                     if (!order.customer.longitude || !order.customer.latitude) return null;
                     const isSelected = order.id === selectedOrderId;
                     return (
@@ -237,21 +230,30 @@ export default function RiderMapView({
                                         isSelected ? styles.orderBadgeSelected : styles.orderBadgeDefault,
                                     ]}
                                 >
-                                    <Text style={styles.orderBadgeText}>#{index + 1}</Text>
+                                    <Text style={styles.orderBadgeText}>{index + 1}</Text>
                                 </View>
-                                <Pin
-                                    size={isSelected ? 30 : 22}
-                                    color={isSelected ? "#0284c7" : "#1e293b"}
-                                />
+                                
+                                {/* 🔥 Professional Package / Box Marker Icon */}
+                                <View style={[styles.packageMarkerCircle, isSelected && styles.packageMarkerSelected]}>
+                                    <Package size={isSelected ? 18 : 14} color="#ffffff" />
+                                </View>
                             </View>
                         </Marker>
                     );
                 })}
 
+                {/* 🔥 GOOGLE MAPS STYLE DIRECTIONAL ARROW MARKER */}
                 {riderLocation && (
                     <Marker id="rider" lngLat={[riderLocation.longitude, riderLocation.latitude]}>
-                        <View style={styles.riderMarker}>
-                            <Bike size={16} color="#ffffff" />
+                        <View style={styles.riderMarkerWrapper}>
+                            <View
+                                style={[
+                                    styles.riderArrowContainer,
+                                    { transform: [{ rotate: `${riderHeading}deg` }] },
+                                ]}
+                            >
+                                <Navigation2 size={20} color="#ffffff" fill="#0284c7" />
+                            </View>
                         </View>
                     </Marker>
                 )}
@@ -286,12 +288,10 @@ export default function RiderMapView({
 }
 
 const styles = StyleSheet.create({
+    
     container: {
         flex: 1,
         position: 'relative',
-    },
-    map: {
-        flex: 1,
     },
     branchMarkerWrapper: {
         width: 64,
@@ -327,12 +327,18 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: 20,
     },
-    riderMarker: {
-        height: 32,
-        width: 32,
-        borderRadius: 16,
+    riderMarkerWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 40,
+        height: 40,
+    },
+    riderArrowContainer: {
+        height: 36,
+        width: 36,
+        borderRadius: 18,
         backgroundColor: '#0f172a',
-        borderWidth: 2,
+        borderWidth: 2.5,
         borderColor: '#ffffff',
         alignItems: 'center',
         justifyContent: 'center',
@@ -343,9 +349,9 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     orderMarkerContainer: {
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
-        marginBottom: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 30,
     },
     orderBadge: {
         paddingHorizontal: 8,
@@ -382,5 +388,27 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 8,
         zIndex: 20,
+    },
+    packageMarkerCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#1e293b',
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    packageMarkerSelected: {
+        backgroundColor: '#0284c7',
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        borderWidth: 2.5,
     },
 });
