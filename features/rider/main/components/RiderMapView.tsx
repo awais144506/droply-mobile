@@ -1,10 +1,13 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/refs */
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Image, Animated, Easing } from 'react-native';
 import { Map, Camera, Marker, GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import { Package, LocateFixed, Navigation2, Navigation } from 'lucide-react-native';
+import * as Location from 'expo-location';
 import { RiderActiveOrder } from '../types/orders';
+import { mapStyles as styles } from '../style/main-style';
 
 interface RiderMapViewProps {
     riderLocation: { latitude: number; longitude: number; heading?: number } | null;
@@ -35,6 +38,8 @@ export default function RiderMapView({
     const pulseAnim = useRef(new Animated.Value(0)).current;
 
     const [fallbackRoute, setFallbackRoute] = useState<[number, number][]>([]);
+    // 🔥 Live device sensor heading (Compass + Gyroscope fusion)
+    const [deviceHeading, setDeviceHeading] = useState<number>(0);
 
     const isNavigating = !!selectedOrderId;
     const hasBranchCoords = typeof branchLat === 'number' && typeof branchLng === 'number';
@@ -42,30 +47,64 @@ export default function RiderMapView({
         ? [branchLng as number, branchLat as number]
         : DEFAULT_CENTER;
 
-    // Find active target order
-    const targetOrder = orders.find(
-        (o) => o.id === selectedOrderId || o.status === 'ON_ROUTE' || o.status === 'ARRIVED'
-    );
+    // 🔥 Strictly find if there is an order currently ON_ROUTE
+    const onRouteOrder = orders.find((o) => o.status === 'ON_ROUTE');
 
-    // 🔥 FETCH ROAD-SNAPPED ROUTE VIA OSRM IF PROPS ROUTECOORDINATES IS EMPTY ON RESTART
     useEffect(() => {
+        let subscription: Location.LocationSubscription | null = null;
+
+        const startWatchingHeading = async () => {
+            try {
+                const { status } = await Location.getForegroundPermissionsAsync();
+                if (status !== 'granted') return;
+
+                subscription = await Location.watchHeadingAsync((headingData) => {
+                    const currentHeading =
+                        headingData.trueHeading >= 0
+                            ? headingData.trueHeading
+                            : headingData.magHeading;
+
+                    if (typeof currentHeading === 'number' && !isNaN(currentHeading)) {
+                        setDeviceHeading(currentHeading);
+                    }
+                });
+            } catch (err) {
+                console.log('Failed to watch device heading:', err);
+            }
+        };
+
+        startWatchingHeading();
+
+        return () => {
+            if (subscription) {
+                subscription.remove();
+            }
+        };
+    }, []);
+
+    // 🔥 FETCH ROAD-SNAPPED ROUTE ONLY IF AN ORDER IS ON_ROUTE
+    useEffect(() => {
+        if (!onRouteOrder) {
+            setFallbackRoute([]);
+            return;
+        }
+
         if (routeCoordinates && routeCoordinates.length > 0) {
             setFallbackRoute([]);
             return;
         }
 
         if (
-            targetOrder &&
             riderLocation &&
-            targetOrder.customer.longitude &&
-            targetOrder.customer.latitude
+            onRouteOrder.customer.longitude &&
+            onRouteOrder.customer.latitude
         ) {
             const fetchRoadRoute = async () => {
                 try {
                     const startLng = riderLocation.longitude;
                     const startLat = riderLocation.latitude;
-                    const endLng = targetOrder.customer.longitude;
-                    const endLat = targetOrder.customer.latitude;
+                    const endLng = onRouteOrder.customer.longitude;
+                    const endLat = onRouteOrder.customer.latitude;
 
                     const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
                     const res = await fetch(url);
@@ -83,9 +122,14 @@ export default function RiderMapView({
 
             fetchRoadRoute();
         }
-    }, [routeCoordinates, riderLocation, targetOrder]);
+    }, [routeCoordinates, riderLocation, onRouteOrder]);
 
-    const activeRouteCoords = routeCoordinates.length > 0 ? routeCoordinates : fallbackRoute;
+    // 🔥 If no order is ON_ROUTE, force activeRouteCoords to empty array so all polylines disappear
+    const activeRouteCoords = onRouteOrder
+        ? routeCoordinates.length > 0
+            ? routeCoordinates
+            : fallbackRoute
+        : [];
 
     useEffect(() => {
         const animation = Animated.loop(
@@ -170,8 +214,8 @@ export default function RiderMapView({
         outputRange: [0.65, 0],
     });
 
-    // Calculate heading rotation for the arrow icon
-    const riderHeading = riderLocation?.heading || 0;
+    // 🔥 Use live sensor rotation (`deviceHeading`), fallback to GPS heading if sensor is 0
+    const riderHeading = deviceHeading || riderLocation?.heading || 0;
 
     return (
         <View style={styles.container}>
@@ -213,7 +257,7 @@ export default function RiderMapView({
                     </Marker>
                 )}
 
-               {orders.map((order, index) => {
+                {orders.map((order, index) => {
                     if (!order.customer.longitude || !order.customer.latitude) return null;
                     const isSelected = order.id === selectedOrderId;
                     return (
@@ -232,7 +276,7 @@ export default function RiderMapView({
                                 >
                                     <Text style={styles.orderBadgeText}>{index + 1}</Text>
                                 </View>
-                                
+
                                 {/* 🔥 Professional Package / Box Marker Icon */}
                                 <View style={[styles.packageMarkerCircle, isSelected && styles.packageMarkerSelected]}>
                                     <Package size={isSelected ? 18 : 14} color="#ffffff" />
@@ -286,129 +330,3 @@ export default function RiderMapView({
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    
-    container: {
-        flex: 1,
-        position: 'relative',
-    },
-    branchMarkerWrapper: {
-        width: 64,
-        height: 64,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    branchPingRing: {
-        position: 'absolute',
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: '#10b981',
-    },
-    branchMarker: {
-        height: 40,
-        width: 40,
-        borderRadius: 20,
-        backgroundColor: '#059669',
-        borderWidth: 2.5,
-        borderColor: '#ffffff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 6,
-    },
-    branchLogoImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 20,
-    },
-    riderMarkerWrapper: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 40,
-        height: 40,
-    },
-    riderArrowContainer: {
-        height: 36,
-        width: 36,
-        borderRadius: 18,
-        backgroundColor: '#0f172a',
-        borderWidth: 2.5,
-        borderColor: '#ffffff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 6,
-    },
-    orderMarkerContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 30,
-    },
-    orderBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        marginBottom: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        elevation: 6,
-    },
-    orderBadgeSelected: {
-        backgroundColor: '#0284c7',
-    },
-    orderBadgeDefault: {
-        backgroundColor: '#1e293b',
-    },
-    orderBadgeText: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#ffffff',
-    },
-    recenterButton: {
-        position: 'absolute',
-        bottom: 350,
-        left: 20,
-        backgroundColor: '#0f172a',
-        padding: 12,
-        borderRadius: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
-        elevation: 8,
-        zIndex: 20,
-    },
-    packageMarkerCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#1e293b',
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    packageMarkerSelected: {
-        backgroundColor: '#0284c7',
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        borderWidth: 2.5,
-    },
-});

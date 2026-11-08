@@ -17,6 +17,12 @@
       "android": {
         "buildType": "apk"
       }
+    },
+    "production": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
@@ -24,7 +30,6 @@
       "android": {
         "track": "internal"
       }
-    },
-    "production": {}
+    }
   }
 }

@@ -23,7 +23,7 @@ export default function MainScreen() {
   const { userId, branchId, userTier } = useRole();
   const { data: orders = [], refetch, isFetching } = useTodayActiveOrders();
   const { data: branchData } = useRiderProfile(userId || "");
-  const updateOrderStatus = useUpdateOrderStatus();
+  const { mutate: updateOrderStatus, isPending } = useUpdateOrderStatus();
 
   // Shift Status Hooks
   const { data: shiftStatus, isLoading: isShiftLoading } = useRiderShiftStatus();
@@ -168,7 +168,7 @@ export default function MainScreen() {
       paymentMethod: 'CASH' | 'BANK';
     }
   ) => {
-    updateOrderStatus.mutate(
+    updateOrderStatus(
       { orderId, status, settlementData },
       {
         onSuccess: () => {
@@ -285,6 +285,7 @@ export default function MainScreen() {
             onSelectOrder={handleSelectOrder}
             onUpdateStatus={handleUpdateOrderStatus}
             onOpenDetails={(order) => setSettlementOrder(order)}
+            isPending={isPending}
           />
         )}
 
@@ -293,6 +294,7 @@ export default function MainScreen() {
             order={settlementOrder}
             onClose={() => setSettlementOrder(null)}
             onComplete={(id, data) => handleUpdateOrderStatus(id, 'COMPLETED', data)}
+            isPending={isPending}
           />
         )}
 

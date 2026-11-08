@@ -8,8 +8,8 @@ import { completeOrderStyle as styles } from '../style/settlemnt';
 
 interface AssetExchangePayload {
     productId: string;
-    inboundQuantity: number;  
-    outboundQuantity: number; 
+    inboundQuantity: number;
+    outboundQuantity: number;
     depositCharged: number;
 }
 
@@ -24,17 +24,11 @@ interface RiderOrderSettlementViewProps {
     order: RiderActiveOrder;
     onClose: () => void;
     onComplete: (orderId: string, settlementData: SettlementPayload) => Promise<void> | void;
+    isPending: boolean;
 }
 
-interface UnifiedReturnableItem {
-    productId: string;
-    name: string;
-    securityDeposit: number;
-    currentBalance: number;
-    orderedQty: number;
-}
 
-export default function RiderOrderSettlementView({ order, onClose, onComplete }: RiderOrderSettlementViewProps) {
+export default function RiderOrderSettlementView({ order, onClose, onComplete, isPending }: RiderOrderSettlementViewProps) {
     const availableAdvance = order.customer.customerAdvance || 0;
     const previousCredit = order.customer.customerCredit || 0;
 
@@ -48,7 +42,7 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
     const [useAdvance, setUseAdvance] = useState(false);
     const [advanceInput, setAdvanceInput] = useState(availableAdvance.toString());
     const [collectedInput, setCollectedInput] = useState('0');
-    
+
     // NEW: Loading State
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -118,7 +112,7 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
 
     const totalSecurityDepositCharged = formattedAssetExchanges.reduce((sum, item) => sum + item.depositCharged, 0);
     const grossPayable = order.totalAmount + previousCredit + totalSecurityDepositCharged;
-    
+
     const maxAllowedAdvance = Math.min(availableAdvance, grossPayable);
     const parsedAdvanceInput = parseFloat(advanceInput) || 0;
     const actualAdvanceToDeduct = useAdvance ? Math.min(parsedAdvanceInput, maxAllowedAdvance) : 0;
@@ -150,7 +144,7 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
 
     const handleComplete = async () => {
         if (!isFormValid || isSubmitting) return;
-        
+
         setIsSubmitting(true);
         try {
             await onComplete(order.id, {
@@ -444,16 +438,16 @@ export default function RiderOrderSettlementView({ order, onClose, onComplete }:
                     <TouchableOpacity
                         activeOpacity={0.9}
                         onPress={handleComplete}
-                        disabled={!isFormValid || isSubmitting}
+                        disabled={!isFormValid || isSubmitting || isPending}
                         style={[styles.completeButton, (!isFormValid || isSubmitting) && styles.disabledButton]}
                     >
-                        {isSubmitting ? (
+                        {isSubmitting || isPending ? (
                             <ActivityIndicator size="small" color="#ffffff" style={styles.iconMarginSmall} />
                         ) : (
                             <CheckCircle2 size={24} color="#ffffff" style={styles.iconMarginSmall} />
                         )}
                         <Text style={styles.completeText}>
-                            {isSubmitting ? 'Processing...' : 'Settle & Complete'}
+                            {isSubmitting || isPending ? 'Processing...' : 'Settle & Complete'}
                         </Text>
                     </TouchableOpacity>
                 </View>

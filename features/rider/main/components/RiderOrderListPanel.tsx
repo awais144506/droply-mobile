@@ -11,6 +11,7 @@ interface Props {
   onSelectOrder: (order: RiderActiveOrder) => void;
   onUpdateStatus: (orderId: string, status: 'ON_ROUTE' | 'ARRIVED') => Promise<void> | void;
   onOpenDetails: (order: RiderActiveOrder) => void;
+  isPending:boolean
 }
 
 export default function RiderOrderListPanel({
@@ -20,6 +21,7 @@ export default function RiderOrderListPanel({
   onSelectOrder,
   onUpdateStatus,
   onOpenDetails,
+  isPending
 }: Props) {
   // Track which specific order ID is currently updating status
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function RiderOrderListPanel({
     const isAssigned = item.status === 'ASSIGNED' || item.status === 'PENDING';
     const isOnRoute = item.status === 'ON_ROUTE';
     const isArrived = item.status === 'ARRIVED';
-    const isUpdating = updatingOrderId === item.id;
+    const isUpdating = isPending;
 
     // If another order is already active, lock/disable this item if it's not the active one
     const isThisOrderActive = isOnRoute || isArrived;

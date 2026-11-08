@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { orderKeysMain } from './order-keys';
 import { ordersApi } from './orders.service';
 import { orderKeys } from '@/features/rider/orders/api/order-keys';
+import Toast from 'react-native-toast-message';
 
 export function useTodayActiveOrders() {
     const api = useApiClient();
@@ -33,9 +34,32 @@ export const useUpdateOrderStatus = () => {
     return useMutation({
         mutationFn: ({ orderId, status, settlementData }: UpdateStatusVariables) =>
             ordersApi.updateOrderStatus(api, orderId, status, settlementData),
-        onSuccess: () => {
+        onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: orderKeysMain.all });
             queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+
+            // 🔥 Success Toast Notification
+            Toast.show({
+                type: 'success',
+                text1: 'Order Updated',
+                text2: `Status successfully changed to ${variables.status.replace('_', ' ')}`,
+                position: 'top',
+            });
+        },
+        onError: (error: any) => {
+            // Extract error message from API response if available
+            const errorMessage =
+                error?.response?.data?.message ||
+                error?.message ||
+                'Failed to update order status. Please try again.';
+
+            // 🔥 Error Toast Notification
+            Toast.show({
+                type: 'error',
+                text1: 'Update Failed',
+                text2: errorMessage,
+                position: 'top',
+            });
         },
     });
 };
