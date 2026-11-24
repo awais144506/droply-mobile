@@ -18,18 +18,19 @@
         "buildType": "apk"
       }
     },
-    "production": {
+    "production-apk": {
       "distribution": "internal",
       "environment": "production",
       "android": {
         "buildType": "apk"
       }
-    }
-  },
-  "submit": {
-    "preview": {
+    },
+    "production": {
+      "distribution": "store",
+      "environment": "production",
+      "autoIncrement": true,
       "android": {
-        "track": "internal"
+        "buildType": "apk"
       }
     }
   }

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL;
+const MAX_GPS_ACCURACY_METERS = 35;
 
 export function useRiderSocket(
   isOnline: boolean,
@@ -26,34 +27,52 @@ export function useRiderSocket(
       return;
     }
 
-    console.log(`🔌 Connecting socket to: ${BACKEND_URL}/rider for rider: ${riderId} (Tier: ${tier})`);
-
-    socketRef.current = io(`${BACKEND_URL}/rider`, {
+    const socket = io(`${BACKEND_URL}/rider`, {
       transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       forceNew: true,
       auth: { riderId, branchId },
     });
 
-    socketRef.current.on('connect', () => {
-      console.log('🟢 Connected to Rider WebSocket Gateway, Socket ID:', socketRef.current?.id);
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('🟢 Connected to Rider WebSocket Gateway, Socket ID:', socket.id);
     });
 
-    socketRef.current.on('connect_error', (err) => {
+    socket.on('disconnect', (reason) => {
+      console.log('🟡 Disconnected from Rider WebSocket Gateway:', reason);
+    });
+
+    socket.io.on('reconnect', (attempt) => {
+      console.log('🔵 Reconnected to Rider WebSocket Gateway after attempts:', attempt);
+    });
+
+    socket.on('connect_error', (err) => {
       console.warn('🔴 WebSocket Connection Error:', err.message);
     });
 
     return () => {
-      socketRef.current?.disconnect();
+      socket.removeAllListeners();
+      socket.io.removeAllListeners();
+      socket.disconnect();
       socketRef.current = null;
     };
   }, [isOnline, riderId, branchId, isPlatinum, tier]);
 
-  const broadcastCoordinates = (latitude: number, longitude: number) => {
-    if (!isPlatinum) return; // Hard block broadcasting if not Platinum
+  const broadcastCoordinates = (
+    latitude: number,
+    longitude: number,
+    accuracy?: number | null
+  ) => {
+    if (!isPlatinum) return;
+    if (typeof accuracy === 'number' && Number.isFinite(accuracy) && accuracy > MAX_GPS_ACCURACY_METERS) {
+      return;
+    }
 
     if (socketRef.current && socketRef.current.connected && riderId) {
       socketRef.current.emit('broadcastLocation', {
@@ -61,6 +80,7 @@ export function useRiderSocket(
         branchId,
         latitude,
         longitude,
+        accuracy: accuracy ?? undefined,
       });
     }
   };

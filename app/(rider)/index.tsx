@@ -21,12 +21,21 @@ import { useRiderBackgroundTracker } from '@/features/rider/main/api/use-rider-b
 
 export default function MainScreen() {
   const { userId, branchId, userTier } = useRole();
-  const { data: orders = [], refetch, isFetching } = useTodayActiveOrders();
+  const {
+    data: orders = [],
+    refetch: refetchOrders,
+    isFetching: isFetchingOrders,
+  } = useTodayActiveOrders();
   const { data: branchData } = useRiderProfile(userId || "");
   const { mutate: updateOrderStatus, isPending } = useUpdateOrderStatus();
 
   // Shift Status Hooks
-  const { data: shiftStatus, isLoading: isShiftLoading } = useRiderShiftStatus();
+  const {
+    data: shiftStatus,
+    isLoading: isShiftLoading,
+    refetch: refetchShiftStatus,
+    isFetching: isFetchingShiftStatus,
+  } = useRiderShiftStatus();
   const startShiftMutation = useStartShift();
   const endShiftMutation = useEndShift();
 
@@ -40,6 +49,12 @@ export default function MainScreen() {
 
   // Ping Animation for Online Status Pill
   const pingAnim = useRef(new Animated.Value(0)).current;
+
+  const isRefreshingAll = isFetchingOrders || isFetchingShiftStatus;
+
+  const handleRefreshAll = async () => {
+    await Promise.all([refetchOrders(), refetchShiftStatus()]);
+  };
 
   useEffect(() => {
     if (isOnline) {
@@ -83,6 +98,7 @@ export default function MainScreen() {
   }, [riderLocation?.latitude, riderLocation?.longitude, isOnline, userId, broadcastCoordinates]);
 
   useRiderBackgroundTracker(isOnline, userId);
+
   // Handle Shift Toggle Confirmation Action
   const handleConfirmShiftToggle = () => {
     setIsAlertVisible(false);
@@ -100,7 +116,8 @@ export default function MainScreen() {
     } else {
       startShiftMutation.mutate(undefined, {
         onSuccess: () => {
-          refetch();
+          refetchOrders();
+          refetchShiftStatus();
         },
       });
     }
@@ -179,7 +196,7 @@ export default function MainScreen() {
             setSelectedOrderId(null);
             setRouteCoordinates([]);
             setSettlementOrder(null);
-            refetch();
+            refetchOrders();
           }
         },
       }
@@ -238,11 +255,11 @@ export default function MainScreen() {
           {isOnline && (
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => refetch()}
-              disabled={isFetching}
+              onPress={handleRefreshAll}
+              disabled={isRefreshingAll}
               style={[styles.controlButton, { backgroundColor: '#000000' }]}
             >
-              {isFetching ? (
+              {isRefreshingAll ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
                 <RefreshCw size={20} color="#ffffff" />
